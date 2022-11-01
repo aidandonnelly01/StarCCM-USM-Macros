@@ -12,28 +12,27 @@ import star.vis.*;
 import star.screenplay.*;
 
 //Class name is exporter inheriting methods from StarMacro 
-public class ExporterV2 extends StarMacro{
+public class ExporterV2 extends StarMacro {
 
     //Star searches for and runs the 'execute' method, all methods to be run should be in here
     public void execute() {
-		//Creates simulation object named simulation_0 
+        //Creates simulation object named simulation_0
         Simulation simulation_0 = getActiveSimulation();
-		//sep contains the standard filepath separator for the users operating 
-		//system, for windows this is '\'
+        //sep contains the standard filepath separator for the users operating
+        //system, for windows this is '\'
         String sep = System.getProperty("file.separator");
-		//dir stores the directory where the sim file is contained
+        //dir stores the directory where the sim file is contained
         File dir = new File(simulation_0.getSessionDir() + sep + simulation_0.getPresentationName());
 
-		//attempts to create another directory in the sim file's directory named after the sim file
-		//mkdir will return false if the directory already exists to prevent data deletion 
-        if(dir.mkdir()) {
-			//creates directory and exports scenes
+        //attempts to create another directory in the sim file's directory named after the sim file
+        //mkdir will return false if the directory already exists to prevent data deletion
+        if (dir.mkdir()) {
+            //creates directory and exports scenes
             simulation_0.println("Simulation Directory created: " + dir.getAbsolutePath());
             getScenes(simulation_0, dir, sep);
             getPlots(simulation_0, dir, sep);
-        }
-        else {
-			//if the directory cannot be created then tell the user, ends macro
+        } else {
+            //if the directory cannot be created then tell the user, ends macro
             simulation_0.println("Simulation directory failed to create, it may already exist");
         }
     }
@@ -48,17 +47,18 @@ public class ExporterV2 extends StarMacro{
         String sep = fileSeparator;
         File dir = new File(simulationDirectory + sep + "Scenes");
 
-       if (dir.mkdir()) {
+        if (dir.mkdir()) {
             //iterate through every scene and export the scenes into a .jpg file and a 3D representation 
             for (Scene scene : simulation_0.getSceneManager().getScenes()) {
                 scene.printAndWait(resolvePath(dir + sep + scene.getPresentationName() + " .jpg"), 1, 1920, 1080);
-                scene.export3DSceneFileAndWait(resolvePath(dir + sep + scene.getPresentationName() + " .sce"), scene.getPresentationName(), "", false, false);
+                //Commented out for debugging purposes, this takes a lot of time
+                //scene.export3DSceneFileAndWait(resolvePath(dir + sep + scene.getPresentationName() + " .sce"), scene.getPresentationName(), "", false, false);
+                exportSweep(simulation_0, dir, sep, scene);
             }
             simulation_0.println("Scenes saving complete");
-        }
-       else {
-		   //if directory exists, do not export
-           simulation_0.println("Scenes did not save successfully");
+        } else {
+            //if directory exists, do not export
+            simulation_0.println("Scenes did not save successfully");
         }
     }
 
@@ -75,8 +75,44 @@ public class ExporterV2 extends StarMacro{
             }
             simulation_0.println("Plot saving complete");
         } else {
-			//if directory already exists, do not export
+            //if directory already exists, do not export
             simulation_0.println("Plots did not save successfully");
         }
+    }
+
+    public void exportSweep(Simulation simulation, File simulationDirectory, String fileSeparator, Scene currentScene) {
+        Simulation simulation_0 = simulation;
+        String sep = fileSeparator;
+        Scene scene = currentScene;
+        File dir = new File(simulationDirectory + sep + scene.getPresentationName());
+        ScalarDisplayer scalarDisplayer = ((ScalarDisplayer) scene.getDisplayerManager().getObject("Scalar 1"));
+        scalarDisplayer.getAnimationManager().setMode(DisplayerAnimationMode.SWEEP);
+        Units units = ((Units) simulation_0.getUnitsManager().getObject("m"));
+
+        if (dir.mkdir()) {
+            exportXSweep(simulation_0, dir, sep, scene, scalarDisplayer, units);
+            exportYSweep(simulation_0, dir, sep, scene, scalarDisplayer);
+            exportZSweep(simulation_0, dir, sep, scene);
+        }
+    }
+
+    public void exportXSweep(Simulation simulation, File simulationDirectory, String fileSeparator, Scene currentScene, ScalarDisplayer currentScalarDisplayer, Units currentUnits) {
+        Simulation simulation_0 = simulation;
+        String sep = fileSeparator;
+        Scene scene = currentScene;
+        File dir = new File(simulationDirectory + sep + scene.getPresentationName());
+        ScalarDisplayer scalarDisplayer = currentScalarDisplayer;
+        Units units = currentUnits;
+
+        SectionAnimationSettings animationSettings = ((SectionAnimationSettings) scalarDisplayer.getAnimationManager().getObject("X Normal"));
+
+    }
+
+    public void exportYSweep(Simulation simulation, File simulationDirectory, String fileSeparator, Scene scene, ScalarDisplayer scalarDisplayer) {
+
+    }
+
+    public void exportZSweep(Simulation simulation, File simulationDirectory, String fileSeparator, Scene scene) {
+
     }
 }
