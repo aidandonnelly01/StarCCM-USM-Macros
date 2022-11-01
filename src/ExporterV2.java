@@ -47,6 +47,8 @@ public class ExporterV2 extends StarMacro {
         String sep = fileSeparator;
         File dir = new File(simulationDirectory + sep + "Scenes");
 
+        createScenes(simulation_0);
+
         if (dir.mkdir()) {
             //iterate through every scene and export the scenes into a .jpg file and a 3D representation 
             for (Scene scene : simulation_0.getSceneManager().getScenes()) {
@@ -59,6 +61,17 @@ public class ExporterV2 extends StarMacro {
         } else {
             //if directory exists, do not export
             simulation_0.println("Scenes did not save successfully");
+        }
+    }
+
+    private void createScenes(Simulation simulation) {
+        Simulation simulation_0 = simulation;
+
+        Collection<FieldFunction> scalarFuncs = simulation.getFieldFunctionManager().getScalarFieldFunctions();
+        Collection<FieldFunction> vectorFuncs = simulation.getFieldFunctionManager().getVectorFieldFunctions();
+
+        for (FieldFunction scalar : scalarFuncs) {
+            ScalarDisplayer display = createNewScalarScene(scalar.getPresentationName());
         }
     }
 
@@ -114,10 +127,9 @@ public class ExporterV2 extends StarMacro {
 
             CurrentView view = scene.getCurrentView();
             view.setInput(new DoubleVector(new double[]{0.8, 0.0, 0.8}), new DoubleVector(new double[]{0.8, -30.8059436014962, 0.8}), new DoubleVector(new double[]{0.0, 0.0, 1.0}), 1.3052619222005157, 1, 30.0);
+
             animationDirector.setIsRecording(true);
-
             animationDirector.record(800, 600, 15.0, 0.0, 20.0, dir.getAbsolutePath(), 1, true, false, VideoEncodingQualityEnum.Q20);
-
             animationDirector.setIsRecording(false);
         }
 
@@ -129,5 +141,33 @@ public class ExporterV2 extends StarMacro {
 
     public void exportZSweep(Simulation simulation, File simulationDirectory, String fileSeparator, Scene scene) {
 
+    }
+
+    private ScalarDisplayer createNewScalarScene(String sceneName){
+        Simulation simulation_0 = getActiveSimulation();
+
+        Collection<NamedObject> sources = new ArrayList<>();
+        Collection<Region> regions = simulation_0.getRegionManager().getRegions();
+        Collection<Boundary> boundaries = new ArrayList<>();
+        for (Region r : regions) {
+            boundaries.add(((Boundary) r.getBoundaryManager().getBoundaries()));
+        }
+
+        sources.addAll(regions);
+        sources.addAll(boundaries);
+
+        simulation_0.getSceneManager().createScalarScene("New ScalarScene", "Outline", "Scalar");
+        Scene scene = simulation_0.getSceneManager().getScene("New ScalarScene 1");
+        scene.setPresentationName(sceneName);
+        scene.close();
+
+        CurrentView view = scene.getCurrentView();
+        view.setInput(new DoubleVector(new double[]{0.8, 0.0, 0.8}), new DoubleVector(new double[]{0.8, -30.8059436014962, 0.8}), new DoubleVector(new double[]{0.0, 0.0, 1.0}), 1.3052619222005157, 1, 30.0);
+
+        ScalarDisplayer scalarDisplayer = ((ScalarDisplayer) scene.getDisplayerManager().getObject(sceneName));
+
+        scalarDisplayer.getInputParts().setObjects(sources);
+
+        return  scalarDisplayer;
     }
 }
