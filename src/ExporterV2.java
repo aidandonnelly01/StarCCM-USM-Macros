@@ -24,6 +24,7 @@ public class ExporterV2 extends StarMacro {
         //dir stores the directory where the sim file is contained
         File dir = new File(simulation_0.getSessionDir() + sep + simulation_0.getPresentationName());
 
+        //problem line below
         createScenes(simulation_0);
         //attempts to create another directory in the sim file's directory named after the sim file
         //mkdir will return false if the directory already exists to prevent data deletion
@@ -68,8 +69,9 @@ public class ExporterV2 extends StarMacro {
     private void createScenes(Simulation simulation) {
         Simulation simulation_0 = simulation;
 
-        Collection<FieldFunction> scalarFuncs = simulation_0.getFieldFunctionManager().getScalarFieldFunctions();
-        Collection<FieldFunction> vectorFuncs = simulation.getFieldFunctionManager().getVectorFieldFunctions();
+        Collection<FieldFunction> scalarFuncs = new ArrayList<>();
+        scalarFuncs.add((FieldFunction) "Velocity");
+        //Collection<FieldFunction> vectorFuncs = simulation.getFieldFunctionManager().getVectorFieldFunctions();
 
         for (FieldFunction scalar : scalarFuncs) {
             ScalarDisplayer display = createNewScalarScene(scalar.getPresentationName());
@@ -149,11 +151,11 @@ public class ExporterV2 extends StarMacro {
         Simulation simulation_0 = getActiveSimulation();
 
         Collection<NamedObject> sources = new ArrayList<>();
-        Collection<Region> regions = simulation_0.getRegionManager().getRegions();
-        Collection<Boundary> boundaries = new ArrayList<>();
-        for (Region r : regions) {
-            boundaries.add(((Boundary) r.getBoundaryManager().getBoundaries()));
-        }
+        Collection<Region> regions = new ArrayList<>(simulation_0.getRegionManager().getRegions());
+        Collection<Boundary> boundaries = new ArrayList<>(simulation_0.getSceneManager().getBoundaryParts());
+        //for (Region r : regions) {
+            //boundaries.add(r.getBoundaryManager().getBoundary());
+        //}
 
         sources.addAll(regions);
         sources.addAll(boundaries);
