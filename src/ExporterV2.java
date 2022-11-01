@@ -24,17 +24,20 @@ public class ExporterV2 extends StarMacro {
         //dir stores the directory where the sim file is contained
         File dir = new File(simulation_0.getSessionDir() + sep + simulation_0.getPresentationName());
 
+        createScenes(simulation_0);
         //attempts to create another directory in the sim file's directory named after the sim file
         //mkdir will return false if the directory already exists to prevent data deletion
+        /*
         if (dir.mkdir()) {
-            //creates directory and exports scenes
+            creates directory and exports scenes
             simulation_0.println("Simulation Directory created: " + dir.getAbsolutePath());
             getScenes(simulation_0, dir, sep);
-            //getPlots(simulation_0, dir, sep);
+            getPlots(simulation_0, dir, sep);
         } else {
-            //if the directory cannot be created then tell the user, ends macro
+            if the directory cannot be created then tell the user, ends macro
             simulation_0.println("Simulation directory failed to create, it may already exist");
         }
+         */
     }
 
     /*
@@ -46,8 +49,6 @@ public class ExporterV2 extends StarMacro {
         Simulation simulation_0 = simulation;
         String sep = fileSeparator;
         File dir = new File(simulationDirectory + sep + "Scenes");
-
-        createScenes(simulation_0);
 
         if (dir.mkdir()) {
             //iterate through every scene and export the scenes into a .jpg file and a 3D representation 
@@ -67,11 +68,12 @@ public class ExporterV2 extends StarMacro {
     private void createScenes(Simulation simulation) {
         Simulation simulation_0 = simulation;
 
-        Collection<FieldFunction> scalarFuncs = simulation.getFieldFunctionManager().getScalarFieldFunctions();
+        Collection<FieldFunction> scalarFuncs = simulation_0.getFieldFunctionManager().getScalarFieldFunctions();
         Collection<FieldFunction> vectorFuncs = simulation.getFieldFunctionManager().getVectorFieldFunctions();
 
         for (FieldFunction scalar : scalarFuncs) {
             ScalarDisplayer display = createNewScalarScene(scalar.getPresentationName());
+            display.getScalarDisplayQuantity().setFieldFunction(scalar);
         }
     }
 
@@ -159,6 +161,7 @@ public class ExporterV2 extends StarMacro {
         simulation_0.getSceneManager().createScalarScene("New ScalarScene", "Outline", "Scalar");
         Scene scene = simulation_0.getSceneManager().getScene("New ScalarScene 1");
         scene.setPresentationName(sceneName);
+        simulation_0.println(sceneName);
         scene.close();
 
         CurrentView view = scene.getCurrentView();
