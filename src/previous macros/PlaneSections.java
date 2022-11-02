@@ -44,6 +44,7 @@ public class PlaneSections extends StarMacro {
 
     scene_0.getCreatorGroup().setQuery(null);
 
+    //redundant
     scene_0.getCreatorGroup().setObjects(region_0, region_1);
 
 	//This section creates the part

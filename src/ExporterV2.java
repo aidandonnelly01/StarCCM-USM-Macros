@@ -24,7 +24,6 @@ public class ExporterV2 extends StarMacro {
         //dir stores the directory where the sim file is contained
         File dir = new File(simulation_0.getSessionDir() + sep + simulation_0.getPresentationName());
 
-        //problem line below
         createScenes(simulation_0);
         //attempts to create another directory in the sim file's directory named after the sim file
         //mkdir will return false if the directory already exists to prevent data deletion
@@ -100,11 +99,14 @@ public class ExporterV2 extends StarMacro {
 
                 displayer.getScalarDisplayQuantity().setFieldFunction(vectorMagFunc);
                 simulation_0.println("entering if statement");
+                createZPlane(units, scene, simulation_0);
+                createYPlane(units, scene, simulation_0);
+                createXPlane(units, scene, simulation_0);
             } else {
                 displayer.getScalarDisplayQuantity().setFieldFunction(func);
                 simulation_0.println("doesn't enter if statement");
             }
-            exportYSweep(simulation_0, dir, "\\", scene, displayer, units);
+            //exportYSweep(simulation_0, dir, "\\", scene, displayer, units);
         }
     }
 
@@ -169,50 +171,61 @@ public class ExporterV2 extends StarMacro {
     }
 
     public void exportXSweep(Simulation simulation, File simulationDirectory, String fileSeparator, Scene scene, ScalarDisplayer scalarDisplayer) {
+        Simulation simulation_0 = simulation;
+        String sep = fileSeparator;
+        Scene scene = currentScene;
+        File dir = new File(simulationDirectory + sep + scene.getPresentationName() + "Y Sweep");
+        ScalarDisplayer scalarDisplayer = currentScalarDisplayer;
+        Units units = currentUnits;
+        scalarDisplayer.getAnimationManager().setMode(DisplayerAnimationMode.SWEEP);
+        AnimationDirector animationDirector = scene.getAnimationDirector();
 
+        if (dir.mkdir()) {
+            SectionAnimationSettings animationSettings = ((SectionAnimationSettings) scalarDisplayer.getAnimationManager().getObject("Y Normal"));
+            animationSettings.setCycleTime(20.0);
+            animationSettings.setAutoRange(false);
+            animationSettings.setStart(-1.0);
+
+            CurrentView view = scene.getCurrentView();
+            view.setInput(new DoubleVector(new double[]{0.8, 0.0, 0.8}), new DoubleVector(new double[]{0.8, 30.8059436014962, 0.8}), new DoubleVector(new double[]{0.0, 0.0, 1.0}), 1.3052619222005157, 1, 30.0);
+
+            animationDirector.setIsRecording(true);
+            animationDirector.record(800, 600, 15.0, 0.0, 20.0, dir.getAbsolutePath(), 1, true, false, VideoEncodingQualityEnum.Q20);
+            animationDirector.setIsRecording(false);
+        }
     }
 
     public void exportZSweep(Simulation simulation, File simulationDirectory, String fileSeparator, Scene scene) {
+        Simulation simulation_0 = simulation;
+        String sep = fileSeparator;
+        Scene scene = currentScene;
+        File dir = new File(simulationDirectory + sep + scene.getPresentationName() + "Y Sweep");
+        ScalarDisplayer scalarDisplayer = currentScalarDisplayer;
+        Units units = currentUnits;
+        scalarDisplayer.getAnimationManager().setMode(DisplayerAnimationMode.SWEEP);
+        AnimationDirector animationDirector = scene.getAnimationDirector();
 
+        if (dir.mkdir()) {
+            SectionAnimationSettings animationSettings = ((SectionAnimationSettings) scalarDisplayer.getAnimationManager().getObject("Y Normal"));
+            animationSettings.setCycleTime(20.0);
+            animationSettings.setAutoRange(false);
+            animationSettings.setStart(-1.0);
+
+            CurrentView view = scene.getCurrentView();
+            view.setInput(new DoubleVector(new double[]{0.8, 0.0, 0.8}), new DoubleVector(new double[]{0.8, 30.8059436014962, 0.8}), new DoubleVector(new double[]{0.0, 0.0, 1.0}), 1.3052619222005157, 1, 30.0);
+
+            animationDirector.setIsRecording(true);
+            animationDirector.record(800, 600, 15.0, 0.0, 20.0, dir.getAbsolutePath(), 1, true, false, VideoEncodingQualityEnum.Q20);
+            animationDirector.setIsRecording(false);
+        }
     }
-
-    private ScalarDisplayer createNewScalarScene(String sceneName){
-        Simulation simulation_0 = getActiveSimulation();
-
-        Collection<NamedObject> sources = new ArrayList<>();
-        Collection<Region> regions = new ArrayList<>(simulation_0.getRegionManager().getRegions());
-        Collection<Boundary> boundaries = new ArrayList<>(simulation_0.getSceneManager().getBoundaryParts());
-        //for (Region r : regions) {
-            //boundaries.add(r.getBoundaryManager().getBoundary());
-        //}
-
-        sources.addAll(regions);
-        sources.addAll(boundaries);
-
-        simulation_0.getSceneManager().createScalarScene("New ScalarScene", "Outline", "Scalar");
-        Scene scene = simulation_0.getSceneManager().getScene("New ScalarScene 1");
-        scene.setPresentationName(sceneName);
-        simulation_0.println(sceneName);
-        scene.close();
-
-        CurrentView view = scene.getCurrentView();
-        view.setInput(new DoubleVector(new double[]{0.8, 0.0, 0.8}), new DoubleVector(new double[]{0.8, -30.8059436014962, 0.8}), new DoubleVector(new double[]{0.0, 0.0, 1.0}), 1.3052619222005157, 1, 30.0);
-
-        ScalarDisplayer scalarDisplayer = ((ScalarDisplayer) scene.getDisplayerManager().getObject(sceneName));
-
-        scalarDisplayer.getInputParts().setObjects(sources);
-
-        return  scalarDisplayer;
-    }
-
     public void createPlanes(Simulation sim, Scene sce, Units u) {
         Simulation simulation_0 = sim;
         Scene scene = sce;
-        Units units = u;
-
-        createXPlane(sim, sce, u, coordinateSystem);
-        createYPlane();
-        createZPlane();
+        Units units[] = new Units[3];
+        for (int i = 0; i < 3; i++) {
+            units[i] = u;
+        }
 
         scene.setTransparencyOverrideMode(SceneTransparencyOverride.MAKE_SCENE_TRANSPARENT);
 
@@ -220,16 +233,187 @@ public class ExporterV2 extends StarMacro {
         Region region_1 = simulation_0.getRegionManager().getRegion("Rad");
 
         scene.getCreatorGroup().setObjects(region_0, region_1);
-
         scene.getCreatorGroup().setQuery(null);
 
         PlaneSection planeSection = (PlaneSection) simulation_0.getPartManager().createImplicitPart(new NeoObjectVector(new Object[] {}), new DoubleVector(new double[] {0.0, 0.0, 1.0}), new DoubleVector(new double[] {0.0, 0.0, 0.0}), 0, 1, new DoubleVector(new double[] {0.0}));
-
         LabCoordinateSystem coordinateSystem = simulation_0.getCoordinateSystemManager().getLabCoordinateSystem();
-
         planeSection.setCoordinateSystem(coordinateSystem);
 
         planeSection.getInputParts().setQuery(null);
 
+        planeSection.getInputParts().setObjects(region_0, region_1);
+
+        planeSection.getOriginCoordinate().setValue(new DoubleVector(new double[] {0.0, 0.0, 0.0}));
+
+        planeSection.getOriginCoordinate().setCoordinate(u, u, u, new DoubleVector(new double[] {0.0, 0.0, 0.0}));
+
+        planeSection.getOriginCoordinate().setCoordinateSystem(coordinateSystem);
+
+        planeSection.getOrientationCoordinate().setUnits(u);
+
+        planeSection.getOrientationCoordinate().setDefinition("");
+
+        createZPlane(u, scene, simulation_0);
+        createYPlane(u, scene, simulation_0);
+        createXPlane(u, scene, simulation_0);
+    }
+
+    public void fuckKnowsFunction(Scene scene, PlaneSection planeSection, Units u) {
+        SingleValue singleValue_0 = planeSection.getSingleValue();
+        singleValue_0.getValueQuantity().setValue(0.0);
+        singleValue_0.getValueQuantity().setUnits(u);
+        RangeMultiValue rangeMultiValue_0 = planeSection.getRangeMultiValue();
+        rangeMultiValue_0.setNValues(2);
+        rangeMultiValue_0.getStartQuantity().setValue(0.0);
+        rangeMultiValue_0.getStartQuantity().setUnits(u);
+        rangeMultiValue_0.getEndQuantity().setValue(1.0);
+        rangeMultiValue_0.getEndQuantity().setUnits(u);
+        DeltaMultiValue deltaMultiValue_0 = planeSection.getDeltaMultiValue();
+        deltaMultiValue_0.setNValues(2);
+        deltaMultiValue_0.getStartQuantity().setValue(0.0);
+        deltaMultiValue_0.getStartQuantity().setUnits(u);
+        deltaMultiValue_0.getDeltaQuantity().setValue(1.0);
+        deltaMultiValue_0.getDeltaQuantity().setUnits(u);
+        MultiValue multiValue_0 = planeSection.getArbitraryMultiValue();
+        multiValue_0.getValueQuantities().setUnits(u);
+        multiValue_0.getValueQuantities().setArray(new DoubleVector(new double[] {0.0}));
+        planeSection.setValueMode(ValueMode.SINGLE);
+        scene.setTransparencyOverrideMode(SceneTransparencyOverride.USE_DISPLAYER_PROPERTY);
+    }
+
+    public void createYPlane(Units u, Scene sce, Simulation sim) {
+        Simulation simulation_0 = sim;
+        Scene scene = sce;
+        Units units[] = new Units[3];
+        for (int i = 0; i < 3; i++) {
+            units[i] = u;
+        }
+
+        scene.setTransparencyOverrideMode(SceneTransparencyOverride.MAKE_SCENE_TRANSPARENT);
+
+        Region region_0 = simulation_0.getRegionManager().getRegion("Region");
+        Region region_1 = simulation_0.getRegionManager().getRegion("Rad");
+
+        scene.getCreatorGroup().setObjects(region_0, region_1);
+        scene.getCreatorGroup().setQuery(null);
+
+        PlaneSection planeSection = (PlaneSection) simulation_0.getPartManager().createImplicitPart(new NeoObjectVector(new Object[] {}), new DoubleVector(new double[] {0.0, 0.0, 1.0}), new DoubleVector(new double[] {0.0, 0.0, 0.0}), 0, 1, new DoubleVector(new double[] {0.0}));
+        LabCoordinateSystem coordinateSystem = simulation_0.getCoordinateSystemManager().getLabCoordinateSystem();
+        planeSection.setCoordinateSystem(coordinateSystem);
+
+        planeSection.getInputParts().setQuery(null);
+
+        planeSection.getInputParts().setObjects(region_0, region_1);
+
+        planeSection.getOriginCoordinate().setValue(new DoubleVector(new double[] {0.0, 0.0, 0.0}));
+
+        planeSection.getOriginCoordinate().setCoordinate(u, u, u, new DoubleVector(new double[] {0.0, 0.0, 0.0}));
+
+        planeSection.getOriginCoordinate().setCoordinateSystem(coordinateSystem);
+
+        planeSection.getOrientationCoordinate().setUnits(u);
+
+        planeSection.getOrientationCoordinate().setDefinition("");
+
+        planeSection.getOrientationCoordinate().setValue(new DoubleVector(new double[]{0.0, 1.0, 0.0}));
+
+        planeSection.getOrientationCoordinate().setCoordinate(u, u, u, new DoubleVector(new double[]{0.0, 1.0, 0.0}));
+
+        planeSection.getOrientationCoordinate().setCoordinateSystem(coordinateSystem);
+
+        //Only our dear sweet lord Jesus Christ knows what the fuck is going on here
+        fuckKnowsFunction(scene, planeSection, u);
+
+        planeSection.setPresentationName("Y Normal");
+    }
+    public void createXPlane (Units u, Scene sce, Simulation sim) {
+        Simulation simulation_0 = sim;
+        Scene scene = sce;
+
+        Units units[] = new Units[3];
+        for (int i = 0; i < 3; i++) {
+            units[i] = u;
+        }
+
+        scene.setTransparencyOverrideMode(SceneTransparencyOverride.MAKE_SCENE_TRANSPARENT);
+
+        Region region_0 = simulation_0.getRegionManager().getRegion("Region");
+        Region region_1 = simulation_0.getRegionManager().getRegion("Rad");
+
+        scene.getCreatorGroup().setObjects(region_0, region_1);
+        scene.getCreatorGroup().setQuery(null);
+
+        PlaneSection planeSection = (PlaneSection) simulation_0.getPartManager().createImplicitPart(new NeoObjectVector(new Object[] {}), new DoubleVector(new double[] {0.0, 0.0, 1.0}), new DoubleVector(new double[] {0.0, 0.0, 0.0}), 0, 1, new DoubleVector(new double[] {0.0}));
+        LabCoordinateSystem coordinateSystem = simulation_0.getCoordinateSystemManager().getLabCoordinateSystem();
+        planeSection.setCoordinateSystem(coordinateSystem);
+
+        planeSection.getInputParts().setQuery(null);
+
+        planeSection.getInputParts().setObjects(region_0, region_1);
+
+        planeSection.getOriginCoordinate().setValue(new DoubleVector(new double[] {0.0, 0.0, 0.0}));
+
+        planeSection.getOriginCoordinate().setCoordinate(u, u, u, new DoubleVector(new double[] {0.0, 0.0, 0.0}));
+
+        planeSection.getOriginCoordinate().setCoordinateSystem(coordinateSystem);
+
+        planeSection.getOrientationCoordinate().setUnits(u);
+
+        planeSection.getOrientationCoordinate().setDefinition("");
+
+        planeSection.getOrientationCoordinate().setValue(new DoubleVector(new double[] {1.0, 0.0, 0.0}));
+
+        planeSection.getOrientationCoordinate().setCoordinate(u, u, u, new DoubleVector(new double[] {1.0, 0.0, 0.0}));
+
+        planeSection.getOrientationCoordinate().setCoordinateSystem(coordinateSystem);
+
+        fuckKnowsFunction(scene, planeSection, u);
+
+        planeSection.setPresentationName("X Normal");
+    }
+    public void createZPlane (Units u, Scene sce, Simulation sim) {
+        Simulation simulation_0 = sim;
+        Scene scene = sce;
+
+        Units units[] = new Units[3];
+        for (int i = 0; i < 3; i++) {
+            units[i] = u;
+        }
+
+        scene.setTransparencyOverrideMode(SceneTransparencyOverride.MAKE_SCENE_TRANSPARENT);
+
+        Region region_0 = simulation_0.getRegionManager().getRegion("Region");
+        Region region_1 = simulation_0.getRegionManager().getRegion("Rad");
+
+        scene.getCreatorGroup().setObjects(region_0, region_1);
+        scene.getCreatorGroup().setQuery(null);
+
+        PlaneSection planeSection = (PlaneSection) simulation_0.getPartManager().createImplicitPart(new NeoObjectVector(new Object[] {}), new DoubleVector(new double[] {0.0, 0.0, 1.0}), new DoubleVector(new double[] {0.0, 0.0, 0.0}), 0, 1, new DoubleVector(new double[] {0.0}));
+        LabCoordinateSystem coordinateSystem = simulation_0.getCoordinateSystemManager().getLabCoordinateSystem();
+        planeSection.setCoordinateSystem(coordinateSystem);
+
+        planeSection.getInputParts().setQuery(null);
+
+        planeSection.getInputParts().setObjects(region_0, region_1);
+
+        planeSection.getOriginCoordinate().setValue(new DoubleVector(new double[] {0.0, 0.0, 0.0}));
+
+        planeSection.getOriginCoordinate().setCoordinate(u, u, u, new DoubleVector(new double[] {0.0, 0.0, 0.0}));
+
+        planeSection.getOriginCoordinate().setCoordinateSystem(coordinateSystem);
+
+        planeSection.getOrientationCoordinate().setUnits(u);
+
+        planeSection.getOrientationCoordinate().setDefinition("");
+
+        planeSection.getOrientationCoordinate().setValue(new DoubleVector(new double[] {0.0, 0.0, 1.0}));
+
+        planeSection.getOrientationCoordinate().setCoordinate(u, u, u, new DoubleVector(new double[] {0.0, 0.0, 1.0}));
+
+        planeSection.getOrientationCoordinate().setCoordinateSystem(coordinateSystem);
+
+        fuckKnowsFunction(scene, planeSection, u);
+
+        planeSection.setPresentationName("Z Normal");
     }
 }
