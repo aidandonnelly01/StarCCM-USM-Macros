@@ -51,8 +51,11 @@ public class ExporterV2 extends StarMacro {
         String sep = fileSeparator;
         File dir = new File(simulationDirectory + sep + "Scenes");
 
+        //UNCOMMENT LATER
+        //createScenes(simulation_0);
+
         if (dir.mkdir()) {
-            //iterate through every scene and export the scenes into a .jpg file and a 3D representation 
+            //iterate through every scene and export the scenes into a .jpg file and a 3D representation
             for (Scene scene : simulation_0.getSceneManager().getScenes()) {
                 //scene.printAndWait(resolvePath(dir + sep + scene.getPresentationName() + " .jpg"), 1, 1920, 1080);
                 //Commented out for debugging purposes, this takes a lot of time to run
@@ -68,14 +71,40 @@ public class ExporterV2 extends StarMacro {
 
     private void createScenes(Simulation simulation) {
         Simulation simulation_0 = simulation;
+        File dir = new File("N:\\1 - USM23 CAD\\Cooling\\CFD\\JavaTest\\testOutputs");
+        String[] functionNames = {"Velocity", "PressureCoefficient", "TotalPressureCoefficient", "TurbulentKineticEnergy"};
+        Units units = ((Units) simulation_0.getUnitsManager().getObject("m"));
 
-        Collection<FieldFunction> scalarFuncs = new ArrayList<>();
-        scalarFuncs.add((FieldFunction) "Velocity");
-        //Collection<FieldFunction> vectorFuncs = simulation.getFieldFunctionManager().getVectorFieldFunctions();
+        Collection<NamedObject> sources = new ArrayList<>();
+        sources.addAll(simulation_0.getSceneManager().getBoundaryParts());
+        sources.addAll(simulation_0.getSceneManager().getRegionParts());
 
-        for (FieldFunction scalar : scalarFuncs) {
-            ScalarDisplayer display = createNewScalarScene(scalar.getPresentationName());
-            display.getScalarDisplayQuantity().setFieldFunction(scalar);
+        for (String name : functionNames) {
+            FieldFunction func  = simulation.getFieldFunctionManager().getFunction(name);
+
+            simulation_0.getSceneManager().createScalarScene("New Scene", "Outline", "Scalar");
+            Scene scene = simulation_0.getSceneManager().getScene("New Scene 1");
+            scene.setPresentationName(func.getPresentationName());
+            CurrentView view = scene.getCurrentView();
+            view.setInput(new DoubleVector(new double[]{0.8, 0.0, 0.8}), new DoubleVector(new double[]{0.8, 30.8059436014962, 0.8}), new DoubleVector(new double[]{0.0, 0.0, 1.0}), 1.3052619222005157, 1, 30.0);
+            scene.close();
+
+            ScalarDisplayer displayer = ((ScalarDisplayer) scene.getDisplayerManager().getDisplayer("Scalar 1"));
+            displayer.getInputParts().setObjects(sources);
+            if (name.equals("Velocity")) {
+                PrimitiveFieldFunction primFunc =
+                        ((PrimitiveFieldFunction) simulation_0.getFieldFunctionManager().getFunction("Velocity"));
+
+                VectorMagnitudeFieldFunction vectorMagFunc =
+                        ((VectorMagnitudeFieldFunction) primFunc.getMagnitudeFunction());
+
+                displayer.getScalarDisplayQuantity().setFieldFunction(vectorMagFunc);
+                simulation_0.println("entering if statement");
+            } else {
+                displayer.getScalarDisplayQuantity().setFieldFunction(func);
+                simulation_0.println("doesn't enter if statement");
+            }
+            exportYSweep(simulation_0, dir, "\\", scene, displayer, units);
         }
     }
 
@@ -125,12 +154,12 @@ public class ExporterV2 extends StarMacro {
 
         if (dir.mkdir()) {
             SectionAnimationSettings animationSettings = ((SectionAnimationSettings) scalarDisplayer.getAnimationManager().getObject("Y Normal"));
-            //animationSettings.setCycleTime(20.0);
+            animationSettings.setCycleTime(20.0);
             animationSettings.setAutoRange(false);
-            //animationSettings.setStart(-1.0);
+            animationSettings.setStart(-1.0);
 
             CurrentView view = scene.getCurrentView();
-            view.setInput(new DoubleVector(new double[]{0.8, 0.0, 0.8}), new DoubleVector(new double[]{0.8, -30.8059436014962, 0.8}), new DoubleVector(new double[]{0.0, 0.0, 1.0}), 1.3052619222005157, 1, 30.0);
+            view.setInput(new DoubleVector(new double[]{0.8, 0.0, 0.8}), new DoubleVector(new double[]{0.8, 30.8059436014962, 0.8}), new DoubleVector(new double[]{0.0, 0.0, 1.0}), 1.3052619222005157, 1, 30.0);
 
             animationDirector.setIsRecording(true);
             animationDirector.record(800, 600, 15.0, 0.0, 20.0, dir.getAbsolutePath(), 1, true, false, VideoEncodingQualityEnum.Q20);
@@ -139,7 +168,7 @@ public class ExporterV2 extends StarMacro {
 
     }
 
-    public void exportYSweep(Simulation simulation, File simulationDirectory, String fileSeparator, Scene scene, ScalarDisplayer scalarDisplayer) {
+    public void exportXSweep(Simulation simulation, File simulationDirectory, String fileSeparator, Scene scene, ScalarDisplayer scalarDisplayer) {
 
     }
 
@@ -174,5 +203,33 @@ public class ExporterV2 extends StarMacro {
         scalarDisplayer.getInputParts().setObjects(sources);
 
         return  scalarDisplayer;
+    }
+
+    public void createPlanes(Simulation sim, Scene sce, Units u) {
+        Simulation simulation_0 = sim;
+        Scene scene = sce;
+        Units units = u;
+
+        createXPlane(sim, sce, u, coordinateSystem);
+        createYPlane();
+        createZPlane();
+
+        scene.setTransparencyOverrideMode(SceneTransparencyOverride.MAKE_SCENE_TRANSPARENT);
+
+        Region region_0 = simulation_0.getRegionManager().getRegion("Region");
+        Region region_1 = simulation_0.getRegionManager().getRegion("Rad");
+
+        scene.getCreatorGroup().setObjects(region_0, region_1);
+
+        scene.getCreatorGroup().setQuery(null);
+
+        PlaneSection planeSection = (PlaneSection) simulation_0.getPartManager().createImplicitPart(new NeoObjectVector(new Object[] {}), new DoubleVector(new double[] {0.0, 0.0, 1.0}), new DoubleVector(new double[] {0.0, 0.0, 0.0}), 0, 1, new DoubleVector(new double[] {0.0}));
+
+        LabCoordinateSystem coordinateSystem = simulation_0.getCoordinateSystemManager().getLabCoordinateSystem();
+
+        planeSection.setCoordinateSystem(coordinateSystem);
+
+        planeSection.getInputParts().setQuery(null);
+
     }
 }
