@@ -24,20 +24,18 @@ public class ExporterV2 extends StarMacro {
         //dir stores the directory where the sim file is contained
         File dir = new File(simulation_0.getSessionDir() + sep + simulation_0.getPresentationName());
 
-        createScenes(simulation_0);
         //attempts to create another directory in the sim file's directory named after the sim file
         //mkdir will return false if the directory already exists to prevent data deletion
-        /*
         if (dir.mkdir()) {
-            creates directory and exports scenes
+            //creates directory and exports scenes
             simulation_0.println("Simulation Directory created: " + dir.getAbsolutePath());
-            getScenes(simulation_0, dir, sep);
+            createScenes(simulation_0, dir, sep);
             getPlots(simulation_0, dir, sep);
+            exportSweep(simulation_0, dir, sep, simulation_0.getSceneManager().getScene("Velocity"));
         } else {
-            if the directory cannot be created then tell the user, ends macro
+            //if the directory cannot be created then tell the user, ends macro
             simulation_0.println("Simulation directory failed to create, it may already exist");
         }
-         */
     }
 
     /*
@@ -45,32 +43,16 @@ public class ExporterV2 extends StarMacro {
     for windows this would be a \, other operating systems may vary
     */
 
-    public void getScenes(Simulation simulation, File simulationDirectory, String fileSeparator) {
-        Simulation simulation_0 = simulation;
-        String sep = fileSeparator;
-        File dir = new File(simulationDirectory + sep + "Scenes");
-
-        //UNCOMMENT LATER
-        //createScenes(simulation_0);
-
-        if (dir.mkdir()) {
-            //iterate through every scene and export the scenes into a .jpg file and a 3D representation
-            for (Scene scene : simulation_0.getSceneManager().getScenes()) {
-                //scene.printAndWait(resolvePath(dir + sep + scene.getPresentationName() + " .jpg"), 1, 1920, 1080);
+    public void exportScene(Scene sce, File simulationDirectory, String fileSeparator) {
+        Scene scene = sce;
+        File dir = new File(simulationDirectory + "Scenes");
+                scene.printAndWait(resolvePath(dir + fileSeparator + scene.getPresentationName() + " .jpg"), 1, 1920, 1080);
                 //Commented out for debugging purposes, this takes a lot of time to run
                 //scene.export3DSceneFileAndWait(resolvePath(dir + sep + scene.getPresentationName() + " .sce"), scene.getPresentationName(), "", false, false);
-                exportSweep(simulation_0, dir, sep, scene);
             }
-            simulation_0.println("Scenes saving complete");
-        } else {
-            //if directory exists, do not export
-            simulation_0.println("Scenes did not save successfully");
-        }
-    }
 
-    private void createScenes(Simulation simulation) {
+    private void createScenes(Simulation simulation, File simulationDirectory, String sep) {
         Simulation simulation_0 = simulation;
-        File dir = new File("N:\\1 - USM23 CAD\\Cooling\\CFD\\JavaTest\\testOutputs");
         String[] functionNames = {"Velocity", "PressureCoefficient", "TotalPressureCoefficient", "TurbulentKineticEnergy"};
         Units units = ((Units) simulation_0.getUnitsManager().getObject("m"));
 
@@ -78,35 +60,37 @@ public class ExporterV2 extends StarMacro {
         sources.addAll(simulation_0.getSceneManager().getBoundaryParts());
         sources.addAll(simulation_0.getSceneManager().getRegionParts());
 
-        for (String name : functionNames) {
-            FieldFunction func  = simulation.getFieldFunctionManager().getFunction(name);
+        File dir = new File(simulationDirectory + "Scenes");
+        if (dir.mkdir()) {
 
-            simulation_0.getSceneManager().createScalarScene("New Scene", "Outline", "Scalar");
-            Scene scene = simulation_0.getSceneManager().getScene("New Scene 1");
-            scene.setPresentationName(func.getPresentationName());
-            CurrentView view = scene.getCurrentView();
-            view.setInput(new DoubleVector(new double[]{0.8, 0.0, 0.8}), new DoubleVector(new double[]{0.8, 30.8059436014962, 0.8}), new DoubleVector(new double[]{0.0, 0.0, 1.0}), 1.3052619222005157, 1, 30.0);
-            scene.close();
+            for (String name : functionNames) {
+                FieldFunction func = simulation.getFieldFunctionManager().getFunction(name);
 
-            ScalarDisplayer displayer = ((ScalarDisplayer) scene.getDisplayerManager().getDisplayer("Scalar 1"));
-            displayer.getInputParts().setObjects(sources);
-            if (name.equals("Velocity")) {
-                PrimitiveFieldFunction primFunc =
-                        ((PrimitiveFieldFunction) simulation_0.getFieldFunctionManager().getFunction("Velocity"));
+                simulation_0.getSceneManager().createScalarScene("New Scene", "Outline", "Scalar");
+                Scene scene = simulation_0.getSceneManager().getScene("New Scene 1");
+                scene.setPresentationName(func.getPresentationName());
+                CurrentView view = scene.getCurrentView();
+                view.setInput(new DoubleVector(new double[]{0.8, 0.0, 0.8}), new DoubleVector(new double[]{0.8, 30.8059436014962, 0.8}), new DoubleVector(new double[]{0.0, 0.0, 1.0}), 1.3052619222005157, 1, 30.0);
+                scene.close();
 
-                VectorMagnitudeFieldFunction vectorMagFunc =
-                        ((VectorMagnitudeFieldFunction) primFunc.getMagnitudeFunction());
+                ScalarDisplayer displayer = ((ScalarDisplayer) scene.getDisplayerManager().getDisplayer("Scalar 1"));
+                displayer.getInputParts().setObjects(sources);
+                if (name.equals("Velocity")) {
+                    PrimitiveFieldFunction primFunc =
+                            ((PrimitiveFieldFunction) simulation_0.getFieldFunctionManager().getFunction("Velocity"));
 
-                displayer.getScalarDisplayQuantity().setFieldFunction(vectorMagFunc);
-                simulation_0.println("entering if statement");
-                createZPlane(units, scene, simulation_0);
-                createYPlane(units, scene, simulation_0);
-                createXPlane(units, scene, simulation_0);
-            } else {
-                displayer.getScalarDisplayQuantity().setFieldFunction(func);
-                simulation_0.println("doesn't enter if statement");
+                    VectorMagnitudeFieldFunction vectorMagFunc =
+                            ((VectorMagnitudeFieldFunction) primFunc.getMagnitudeFunction());
+
+                    displayer.getScalarDisplayQuantity().setFieldFunction(vectorMagFunc);
+                    createZPlane(units, scene, simulation_0);
+                    createYPlane(units, scene, simulation_0);
+                    createXPlane(units, scene, simulation_0);
+                } else {
+                    displayer.getScalarDisplayQuantity().setFieldFunction(func);
+                }
+                exportScene(scene, dir, sep);
             }
-            //exportYSweep(simulation_0, dir, "\\", scene, displayer, units);
         }
     }
 
@@ -132,15 +116,15 @@ public class ExporterV2 extends StarMacro {
         Simulation simulation_0 = simulation;
         String sep = fileSeparator;
         Scene scene = currentScene;
-        File dir = new File(simulationDirectory + sep + scene.getPresentationName());
+        File dir = new File(simulationDirectory + sep + scene.getPresentationName() + "Sweeps");
         ScalarDisplayer scalarDisplayer = ((ScalarDisplayer) scene.getDisplayerManager().getObject("Scalar 1"));
         scalarDisplayer.getAnimationManager().setMode(DisplayerAnimationMode.SWEEP);
         Units units = ((Units) simulation_0.getUnitsManager().getObject("m"));
 
         if (dir.mkdir()) {
+            exportXSweep(simulation_0, dir, sep, scene, scalarDisplayer, units);
             exportYSweep(simulation_0, dir, sep, scene, scalarDisplayer, units);
-            //exportYSweep(simulation_0, dir, sep, scene, scalarDisplayer);
-            //exportZSweep(simulation_0, dir, sep, scene);
+            exportZSweep(simulation_0, dir, sep, scene, scalarDisplayer, units);
         }
     }
 
@@ -170,10 +154,10 @@ public class ExporterV2 extends StarMacro {
 
     }
 
-    public void exportXSweep(Simulation simulation, File simulationDirectory, String fileSeparator, Scene scene, ScalarDisplayer scalarDisplayer) {
+    public void exportXSweep(Simulation simulation, File simulationDirectory, String fileSeparator, Scene sce, ScalarDisplayer currentScalarDisplayer, Units currentUnits) {
         Simulation simulation_0 = simulation;
         String sep = fileSeparator;
-        Scene scene = currentScene;
+        Scene scene = sce;
         File dir = new File(simulationDirectory + sep + scene.getPresentationName() + "Y Sweep");
         ScalarDisplayer scalarDisplayer = currentScalarDisplayer;
         Units units = currentUnits;
@@ -195,10 +179,10 @@ public class ExporterV2 extends StarMacro {
         }
     }
 
-    public void exportZSweep(Simulation simulation, File simulationDirectory, String fileSeparator, Scene scene) {
+    public void exportZSweep(Simulation simulation, File simulationDirectory, String fileSeparator, Scene sce, ScalarDisplayer currentScalarDisplayer, Units currentUnits) {
         Simulation simulation_0 = simulation;
         String sep = fileSeparator;
-        Scene scene = currentScene;
+        Scene scene = sce;
         File dir = new File(simulationDirectory + sep + scene.getPresentationName() + "Y Sweep");
         ScalarDisplayer scalarDisplayer = currentScalarDisplayer;
         Units units = currentUnits;
