@@ -1,13 +1,11 @@
 // Simcenter STAR-CCM+ macro: SceneCreate.java
 // Written by Simcenter STAR-CCM+ 16.04.012
-package macro;
 
 import java.util.*;
 
 import star.common.*;
 import star.base.neo.*;
 import star.vis.*;
-
 public class SceneCreate extends StarMacro {
 
   public void execute() {
