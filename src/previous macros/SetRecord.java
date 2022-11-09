@@ -1,6 +1,5 @@
 // Simcenter STAR-CCM+ macro: SetRecord.java
 // Written by Simcenter STAR-CCM+ 16.04.012
-package macro;
 
 import java.util.*;
 
@@ -20,7 +19,7 @@ public class SetRecord extends StarMacro {
       getActiveSimulation();
 
     Scene scene_1 = 
-      simulation_0.getSceneManager().getScene("Scalar Scene 2");
+      simulation_0.getSceneManager().getScene("Pressure Coefficient");
 
     ScalarDisplayer scalarDisplayer_1 = 
       ((ScalarDisplayer) scene_1.getDisplayerManager().getObject("Scalar 1"));
