@@ -292,7 +292,7 @@ public class ExporterV2 extends StarMacro {
         multiValue_0.getValueQuantities().setUnits(u);
         multiValue_0.getValueQuantities().setArray(new DoubleVector(new double[] {0.0}));
         planeSection.setValueMode(ValueMode.SINGLE);
-        scene.setTransparencyOverrideMode(SceneTransparencyOverride.USE_DISPLAYER_PROPERTY);
+        //scene.setTransparencyOverrideMode(SceneTransparencyOverride.USE_DISPLAYER_PROPERTY);
     }
 
     public void createYPlane(Units u, Scene sce, Simulation sim) {
@@ -303,7 +303,7 @@ public class ExporterV2 extends StarMacro {
             units[i] = u;
         }
 
-        scene.setTransparencyOverrideMode(SceneTransparencyOverride.MAKE_SCENE_TRANSPARENT);
+        //scene.setTransparencyOverrideMode(SceneTransparencyOverride.MAKE_SCENE_TRANSPARENT);
 
         Region region_0 = simulation_0.getRegionManager().getRegion("Region");
         Region region_1 = simulation_0.getRegionManager().getRegion("Rad");
@@ -368,7 +368,7 @@ public class ExporterV2 extends StarMacro {
             units[i] = u;
         }
 
-        scene.setTransparencyOverrideMode(SceneTransparencyOverride.MAKE_SCENE_TRANSPARENT);
+        //scene.setTransparencyOverrideMode(SceneTransparencyOverride.MAKE_SCENE_TRANSPARENT);
 
         Region region_0 = simulation_0.getRegionManager().getRegion("Region");
         Region region_1 = simulation_0.getRegionManager().getRegion("Rad");
