@@ -8,8 +8,11 @@ import java.io.File;
 //import statements required for star stuff
 import star.common.*;
 import star.base.neo.*;
-import star.vis.*;
+import star.screenplay.operations.neo.*;
+import star.screenplay.operations.*;
+import star.common.screenplay.traits.*;
 import star.screenplay.*;
+import star.vis.*;
 
 //Class name is exporter inheriting methods from StarMacro 
 public class ExporterV2 extends StarMacro {
@@ -83,14 +86,15 @@ public class ExporterV2 extends StarMacro {
                             ((VectorMagnitudeFieldFunction) primFunc.getMagnitudeFunction());
 
                     displayer.getScalarDisplayQuantity().setFieldFunction(vectorMagFunc);
+
+                    createZPlane(units, scene, simulation_0, coordinateSystem);
+                    createYPlane(units, scene, simulation_0);
+                    createXPlane(units, scene, simulation_0);
                 } else {
                     displayer.getScalarDisplayQuantity().setFieldFunction(func);
                 }
-                createZPlane(units, scene, simulation_0, coordinateSystem);
-                createYPlane(units, scene, simulation_0);
-                createXPlane(units, scene, simulation_0);
                 exportScene(scene, dir, sep);
-                //exportSweep(simulation_0, dir, sep, scene);
+                exportSweep(simulation_0, dir, sep, scene);
             }
         }
     }
@@ -124,9 +128,71 @@ public class ExporterV2 extends StarMacro {
 
         if (dir.mkdir()) {
             //exportXSweep(simulation_0, dir, sep, scene, scalarDisplayer, units);
-            exportYSweep(simulation_0, dir, sep, scene, scalarDisplayer, units);
+            exportYSweep2(simulation_0, dir, sep, scene, scalarDisplayer, units);
             //exportZSweep(simulation_0, dir, sep, scene, scalarDisplayer, units);
         }
+    }
+
+    public void exportYSweep2(Simulation simulation, File simulationDirectory, String fileSeparator, Scene currentScene, ScalarDisplayer currentScalarDisplayer, Units currentUnits) {
+        Simulation simulation_0 = simulation;
+        Scene scene = currentScene;
+        File dir = new File(simulationDirectory + fileSeparator + "Y Sweep");
+
+        Screenplay screenplay = simulation_0.get(ScreenplayManager.class).createScreenplay(scene);
+
+        CurrentView view = scene.getCurrentView();
+        view.setInput(new DoubleVector(new double[]{0.8, 0.0, 0.8}), new DoubleVector(new double[]{0.8, 30.8059436014962, 0.8}), new DoubleVector(new double[]{0.0, 0.0, 1.0}), 1.3052619222005157, 1, 30.0);
+
+        simulation_0.get(ScreenplayManager.class).setActiveScreenplay(screenplay);
+
+        screenplay.openEditor();
+
+        Region region_0 = simulation_0.getRegionManager().getRegion("Region");
+
+        Region region_1 = simulation_0.getRegionManager().getRegion("Rad");
+
+        FvRepresentation fvRepresentation_0 = ((FvRepresentation) simulation_0.getRepresentationManager().getObject("Volume Mesh"));
+
+        simulation_0.getDataSourceManager().getPartExtents(new NeoObjectVector(new Object[] {region_0, region_1}), fvRepresentation_0);
+
+        Action action_0 = screenplay.getActionManager().createAction(Action.class);
+
+        action_0.setTime(0.0);
+
+        action_0.setRow(0);
+
+        ScalarKeyframeSequence scalarKeyframeSequence_0 = action_0.getOperationManager().createOperation(ScalarKeyframeSequence.class);
+
+        PlaneSection planeSection = ((PlaneSection) simulation_0.getPartManager().getObject("Y Normal"));
+
+        SingleValue singleValue = planeSection.getSingleValue();
+
+        ScreenplayReference screenplayReference_0 =
+                new ScreenplayReference(singleValue, ScreenplayProperty.SingleValue_Offset, 1);
+
+        scalarKeyframeSequence_0.setScreenplayReferences(screenplayReference_0);
+
+        scalarKeyframeSequence_0.setPresentationName("Offset");
+
+        scalarKeyframeSequence_0.createDefaultValues();
+
+        ScalarKeyframe scalarKeyframe_0 = ((ScalarKeyframe) scalarKeyframeSequence_0.getKeyframeManager().getKeyframe(1));
+
+        ((ScalarPhysicalQuantity) scalarKeyframe_0.getSource()).setValue(3.0);
+
+        ((ScalarPhysicalQuantity) scalarKeyframe_0.getSource()).setUnits(currentUnits);
+
+        ScreenplayDirector screenplayDirector_0 = screenplay.getScreenplayDirector();
+
+        screenplayDirector_0.setFramesPerSecond(50.0);
+
+        action_0.setDuration(2.5);
+
+        screenplayDirector_0.setIsRecording(true);
+
+        screenplayDirector_0.record(1920, 1080, 50.0, 0.0, 3.5, dir.getAbsolutePath(), 1, true, false, VideoEncodingQualityEnum.Q10);
+
+        screenplayDirector_0.setIsRecording(false);
     }
 
     public void exportYSweep(Simulation simulation, File simulationDirectory, String fileSeparator, Scene currentScene, ScalarDisplayer currentScalarDisplayer, Units currentUnits) {
