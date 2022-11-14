@@ -8,10 +8,6 @@ import java.io.File;
 //import statements required for star stuff
 import star.common.*;
 import star.base.neo.*;
-import star.screenplay.operations.neo.*;
-import star.screenplay.operations.*;
-import star.common.screenplay.traits.*;
-import star.screenplay.*;
 import star.vis.*;
 
 //Class name is exporter inheriting methods from StarMacro 
@@ -27,50 +23,61 @@ public class ExporterV2 extends StarMacro {
         //dir stores the directory where the sim file is contained
         File dir = new File(simulation_0.getSessionDir() + sep + simulation_0.getPresentationName());
 
-        //attempts to create another directory in the sim file's directory named after the sim file
-        //mkdir will return false if the directory already exists to prevent data deletion
-        if (dir.mkdir()) {
-            //creates directory and exports scenes
-            simulation_0.println("Simulation Directory created: " + dir.getAbsolutePath());
-            createScenes(simulation_0, dir, sep);
-            getPlots(simulation_0, dir, sep);
-        } else {
-            //if the directory cannot be created then tell the user, ends macro
-            simulation_0.println("Simulation directory failed to create, it may already exist");
+        //This attempts to create a new directory to save the exports into, if a directory already exists it will
+        //keep trying to create one by putting 'copy' at the end
+        while (!dir.mkdir()) {
+                dir = new File(dir.getAbsolutePath() + " Copy");
         }
+        //Announces to the world that the simulation directory has been created
+        simulation_0.println("Simulation Directory created: " + dir.getAbsolutePath());
+        //Calls the method to export the plots
+        getPlots(simulation_0, dir, sep);
+        //Calls thr method to create the scenes
+        createScenes(simulation_0, dir, sep);
     }
 
     /*
-    This should export all the scenes, it passes in the simulation, the CWD and the operating system's file separator,
-    for windows this would be a \, other operating systems may vary
+        This should export all the scenes, it passes in a scene, the CWD and the operating system's file separator,
+        for windows (other operating systems are available) this would be a \
     */
-
     public void exportScene(Scene sce, File simulationDirectory, String fileSeparator) {
         Scene scene = sce;
-        File dir = new File(simulationDirectory + "Scenes");
-                scene.printAndWait(resolvePath(dir + fileSeparator + scene.getPresentationName() + " .jpg"), 1, 1920, 1080);
-                //Commented out for debugging purposes, this takes a lot of time to run
-                //scene.export3DSceneFileAndWait(resolvePath(dir + sep + scene.getPresentationName() + " .sce"), scene.getPresentationName(), "", false, false);
-            }
+        File dir = new File (simulationDirectory.getAbsolutePath() + fileSeparator + "Scenes");
+        while (!dir.mkdir()) {
+            dir = new File(dir.getAbsolutePath() + " Copy");
+        }
+        scene.printAndWait(resolvePath(dir + fileSeparator + scene.getPresentationName() + " .jpg"), 1, 1920, 1080);
+        //Commented out for debugging purposes, this takes a lot of time to run
+        //scene.export3DSceneFileAndWait(resolvePath(dir + sep + scene.getPresentationName() + " .sce"), scene.getPresentationName(), "", false, false);
+    }
 
+    /*
+        This will create the scenes, inside this method is the method to export the scenes and sweeps, this method
+        takes in the current simulation, the directory where all the exports are saved, and the standard file separator
+        for the user's operating system.
+    */
     private void createScenes(Simulation simulation, File simulationDirectory, String sep) {
-        Simulation simulation_0 = simulation;
         String[] functionNames = {"Velocity", "PressureCoefficient", "TotalPressureCoefficient", "TurbulentKineticEnergy"};
-        Units units = ((Units) simulation_0.getUnitsManager().getObject("m"));
-        LabCoordinateSystem coordinateSystem = simulation_0.getCoordinateSystemManager().getLabCoordinateSystem();
+        Units units = simulation.getUnitsManager().getObject("m");
+        LabCoordinateSystem coordinateSystem = simulation.getCoordinateSystemManager().getLabCoordinateSystem();
 
+        /*
+        This takes in all the boundaries of the car, and adds them to an ArrayList so that the 3D model of the car can
+        be created in the scene. Some of these methods are depreciated, so they may have to be replaced, but it works for
+        now and there seems to be no other way to do this.
+        */
         Collection<NamedObject> sources = new ArrayList<>();
-        sources.addAll(simulation_0.getSceneManager().getBoundaryParts());
-        sources.addAll(simulation_0.getSceneManager().getRegionParts());
+        sources.addAll(simulation.getSceneManager().getBoundaryParts());
+        sources.addAll(simulation.getSceneManager().getRegionParts());
 
-        File dir = new File(simulationDirectory + "Scenes");
-        if (dir.mkdir()) {
-
+        /*
+            For every function in the function names array, create a scene with that function
+        */
             for (String name : functionNames) {
                 FieldFunction func = simulation.getFieldFunctionManager().getFunction(name);
 
-                simulation_0.getSceneManager().createScalarScene("New Scene", "Outline", "Scalar");
-                Scene scene = simulation_0.getSceneManager().getScene("New Scene 1");
+                simulation.getSceneManager().createScalarScene("New Scene", "Outline", "Scalar");
+                Scene scene = simulation.getSceneManager().getScene("New Scene 1");
                 scene.setPresentationName(func.getPresentationName());
                 CurrentView view = scene.getCurrentView();
                 view.setInput(new DoubleVector(new double[]{0.8, 0.0, 0.8}), new DoubleVector(new double[]{0.8, 30.8059436014962, 0.8}), new DoubleVector(new double[]{0.0, 0.0, 1.0}), 1.3052619222005157, 1, 30.0);
@@ -78,142 +85,88 @@ public class ExporterV2 extends StarMacro {
 
                 ScalarDisplayer displayer = ((ScalarDisplayer) scene.getDisplayerManager().getDisplayer("Scalar 1"));
                 displayer.getInputParts().setObjects(sources);
+                /*
+                    Velocity is a bit weird, the function required is 'Velocity Magnitude', so this part of the script needs to be
+                    created specifically for it, however, since it only passes it once and the X, Y and Z planes need to only
+                    be created once, it's a good way to call those methods. The plane creator methods require a scene to be created
+                    first before the planes themselves can be created, a strange quirk of StarCCM perhaps
+
+                    Scope to clean this up slightly, but it should work
+                */
                 if (name.equals("Velocity")) {
                     PrimitiveFieldFunction primFunc =
-                            ((PrimitiveFieldFunction) simulation_0.getFieldFunctionManager().getFunction("Velocity"));
+                            ((PrimitiveFieldFunction) simulation.getFieldFunctionManager().getFunction("Velocity"));
 
                     VectorMagnitudeFieldFunction vectorMagFunc =
                             ((VectorMagnitudeFieldFunction) primFunc.getMagnitudeFunction());
 
                     displayer.getScalarDisplayQuantity().setFieldFunction(vectorMagFunc);
 
-                    createZPlane(units, scene, simulation_0, coordinateSystem);
-                    createYPlane(units, scene, simulation_0);
-                    createXPlane(units, scene, simulation_0);
+                    //This creates 3 planes, a surprise tool that will help us later
+                    createZPlane(units, scene, simulation, coordinateSystem);
+                    createYPlane(units, scene, simulation, coordinateSystem);
+                    createXPlane(units, scene, simulation, coordinateSystem);
                 } else {
+                    //This just creates the other scenes
                     displayer.getScalarDisplayQuantity().setFieldFunction(func);
                 }
-                exportScene(scene, dir, sep);
-                exportSweep(simulation_0, dir, sep, scene);
+                //Calls the export scene method
+                exportScene(scene, simulationDirectory, sep);
+                //Calls the export sweep method
+                exportSweep(simulation, simulationDirectory, sep, scene);
             }
         }
-    }
 
     public void getPlots(Simulation simulation, File simulationDirectory, String fileSeparator) {
-        Simulation simulation_0 = simulation;
-        String sep = fileSeparator;
-        File dir = new File(simulationDirectory + sep + "Plots");
+        File dir = new File(simulationDirectory + fileSeparator + "Plots");
 
         if (dir.mkdir()) {
             //iterate through every plot and export the scenes into a .jpg file and exports data into .csv files
-            for (StarPlot plot : simulation_0.getPlotManager().getObjects()) {
-                plot.encode(resolvePath(dir + sep + plot.getPresentationName() + " .jpg"), "jpg", 1920, 1080);
-                plot.export(dir + sep + plot.getPresentationName() + ".csv", ",");
+            for (StarPlot plot : simulation.getPlotManager().getObjects()) {
+                plot.encode(resolvePath(dir + fileSeparator + plot.getPresentationName() + " .jpg"), "jpg", 1920, 1080);
+                plot.export(dir + fileSeparator + plot.getPresentationName() + ".csv", ",");
             }
-            simulation_0.println("Plot saving complete");
+            simulation.println("Plot saving complete");
         } else {
             //if directory already exists, do not export
-            simulation_0.println("Plots did not save successfully");
+            simulation.println("Plots did not save successfully");
         }
     }
 
     public void exportSweep(Simulation simulation, File simulationDirectory, String fileSeparator, Scene currentScene) {
-        Simulation simulation_0 = simulation;
-        String sep = fileSeparator;
-        Scene scene = currentScene;
-        File dir = new File(simulationDirectory + sep + scene.getPresentationName() + " Sweeps");
-        ScalarDisplayer scalarDisplayer = ((ScalarDisplayer) scene.getDisplayerManager().getObject("Scalar 1"));
+        File dir = new File(simulationDirectory + fileSeparator + currentScene.getPresentationName() + " Sweeps");
+        ScalarDisplayer scalarDisplayer = ((ScalarDisplayer) currentScene.getDisplayerManager().getObject("Scalar 1"));
         scalarDisplayer.getAnimationManager().setMode(DisplayerAnimationMode.SWEEP);
-        Units units = ((Units) simulation_0.getUnitsManager().getObject("m"));
+        scalarDisplayer.getInputParts().setQuery(null);
+
+        PlaneSection xPlane = ((PlaneSection) simulation.getPartManager().getObject("X Normal"));
+
+        PlaneSection yPlane = ((PlaneSection) simulation.getPartManager().getObject("Y Normal"));
+
+        PlaneSection zPlane = ((PlaneSection) simulation.getPartManager().getObject("Z Normal"));
+
+        scalarDisplayer.getInputParts().setObjects(xPlane, yPlane, zPlane);
 
         if (dir.mkdir()) {
-            //exportXSweep(simulation_0, dir, sep, scene, scalarDisplayer, units);
-            exportYSweep2(simulation_0, dir, sep, scene, scalarDisplayer, units);
-            //exportZSweep(simulation_0, dir, sep, scene, scalarDisplayer, units);
+            exportXSweep(dir, fileSeparator, currentScene, scalarDisplayer);
+            exportYSweep(dir, fileSeparator, currentScene, scalarDisplayer);
+            exportZSweep(dir, fileSeparator, currentScene, scalarDisplayer);
         }
     }
 
-    public void exportYSweep2(Simulation simulation, File simulationDirectory, String fileSeparator, Scene currentScene, ScalarDisplayer currentScalarDisplayer, Units currentUnits) {
-        Simulation simulation_0 = simulation;
-        Scene scene = currentScene;
-        File dir = new File(simulationDirectory + fileSeparator + "Y Sweep");
-
-        Screenplay screenplay = simulation_0.get(ScreenplayManager.class).createScreenplay(scene);
-
-        CurrentView view = scene.getCurrentView();
-        view.setInput(new DoubleVector(new double[]{0.8, 0.0, 0.8}), new DoubleVector(new double[]{0.8, 30.8059436014962, 0.8}), new DoubleVector(new double[]{0.0, 0.0, 1.0}), 1.3052619222005157, 1, 30.0);
-
-        simulation_0.get(ScreenplayManager.class).setActiveScreenplay(screenplay);
-
-        screenplay.openEditor();
-
-        Region region_0 = simulation_0.getRegionManager().getRegion("Region");
-
-        Region region_1 = simulation_0.getRegionManager().getRegion("Rad");
-
-        FvRepresentation fvRepresentation_0 = ((FvRepresentation) simulation_0.getRepresentationManager().getObject("Volume Mesh"));
-
-        simulation_0.getDataSourceManager().getPartExtents(new NeoObjectVector(new Object[] {region_0, region_1}), fvRepresentation_0);
-
-        Action action_0 = screenplay.getActionManager().createAction(Action.class);
-
-        action_0.setTime(0.0);
-
-        action_0.setRow(0);
-
-        ScalarKeyframeSequence scalarKeyframeSequence_0 = action_0.getOperationManager().createOperation(ScalarKeyframeSequence.class);
-
-        PlaneSection planeSection = ((PlaneSection) simulation_0.getPartManager().getObject("Y Normal"));
-
-        SingleValue singleValue = planeSection.getSingleValue();
-
-        ScreenplayReference screenplayReference_0 =
-                new ScreenplayReference(singleValue, ScreenplayProperty.SingleValue_Offset, 1);
-
-        scalarKeyframeSequence_0.setScreenplayReferences(screenplayReference_0);
-
-        scalarKeyframeSequence_0.setPresentationName("Offset");
-
-        scalarKeyframeSequence_0.createDefaultValues();
-
-        ScalarKeyframe scalarKeyframe_0 = ((ScalarKeyframe) scalarKeyframeSequence_0.getKeyframeManager().getKeyframe(1));
-
-        ((ScalarPhysicalQuantity) scalarKeyframe_0.getSource()).setValue(3.0);
-
-        ((ScalarPhysicalQuantity) scalarKeyframe_0.getSource()).setUnits(currentUnits);
-
-        ScreenplayDirector screenplayDirector_0 = screenplay.getScreenplayDirector();
-
-        screenplayDirector_0.setFramesPerSecond(50.0);
-
-        action_0.setDuration(2.5);
-
-        screenplayDirector_0.setIsRecording(true);
-
-        screenplayDirector_0.record(1920, 1080, 50.0, 0.0, 3.5, dir.getAbsolutePath(), 1, true, false, VideoEncodingQualityEnum.Q10);
-
-        screenplayDirector_0.setIsRecording(false);
-    }
-
-    public void exportYSweep(Simulation simulation, File simulationDirectory, String fileSeparator, Scene currentScene, ScalarDisplayer currentScalarDisplayer, Units currentUnits) {
-        Simulation simulation_0 = simulation;
-        String sep = fileSeparator;
-        Scene scene = currentScene;
-        File dir = new File(simulationDirectory + " Y Sweep");
-        ScalarDisplayer scalarDisplayer = currentScalarDisplayer;
-        Units units = currentUnits;
-        scalarDisplayer.getAnimationManager().setMode(DisplayerAnimationMode.SWEEP);
+    public void exportYSweep(File simulationDirectory, String fileSeparator, Scene scene, ScalarDisplayer currentScalarDisplayer) {
+        File dir = new File(simulationDirectory + fileSeparator + " Y Sweep");
+        currentScalarDisplayer.getAnimationManager().setMode(DisplayerAnimationMode.SWEEP);
         AnimationDirector animationDirector = scene.getAnimationDirector();
 
         if (dir.mkdir()) {
-            //SectionAnimationSettings animationSettings = ((SectionAnimationSettings) scalarDisplayer.getAnimationManager().getObject("Y Normal"));
-            //SectionAnimationSettings animationSettings = new SectionAnimationSettings(((ClientServerObjectKey) "UTwxT7Fy2MXLm+BdcDVfXA"));
-                    //animationSettings.setCycleTime(20.0);
-            //animationSettings.setAutoRange(false);
-            //animationSettings.setStart(-1.0);
+            SectionAnimationSettings animationSettings = ((SectionAnimationSettings) currentScalarDisplayer.getAnimationManager().getObject("Y Normal"));
+            animationSettings.setCycleTime(20.0);
+            animationSettings.setAutoRange(false);
+            animationSettings.setStart(-1.0);
 
             CurrentView view = scene.getCurrentView();
-            view.setInput(new DoubleVector(new double[]{0.8, 0.0, 0.8}), new DoubleVector(new double[]{0.8, 30.8059436014962, 0.8}), new DoubleVector(new double[]{0.0, 0.0, 1.0}), 1.3052619222005157, 1, 30.0);
+            view.setInput(new DoubleVector(new double[]{0.8, 0.0, 0.8}), new DoubleVector(new double[]{0.8, -30.8059436014962, 0.8}), new DoubleVector(new double[]{0.0, 0.0, 1.0}), 1.3052619222005157, 1, 30.0);
 
             animationDirector.setIsRecording(true);
             animationDirector.record(800, 600, 15.0, -1.0, 20.0, dir.getAbsolutePath(), 1, true, false, VideoEncodingQualityEnum.Q20);
@@ -222,13 +175,8 @@ public class ExporterV2 extends StarMacro {
 
     }
 
-    public void exportXSweep(Simulation simulation, File simulationDirectory, String fileSeparator, Scene sce, ScalarDisplayer currentScalarDisplayer, Units currentUnits) {
-        Simulation simulation_0 = simulation;
-        String sep = fileSeparator;
-        Scene scene = sce;
-        File dir = new File(simulationDirectory + sep + scene.getPresentationName() + "X Sweep");
-        ScalarDisplayer scalarDisplayer = currentScalarDisplayer;
-        Units units = currentUnits;
+    public void exportXSweep(File simulationDirectory, String fileSeparator, Scene scene, ScalarDisplayer scalarDisplayer) {
+        File dir = new File(simulationDirectory + fileSeparator + "X Sweep");
         scalarDisplayer.getAnimationManager().setMode(DisplayerAnimationMode.SWEEP);
         AnimationDirector animationDirector = scene.getAnimationDirector();
 
@@ -247,13 +195,8 @@ public class ExporterV2 extends StarMacro {
         }
     }
 
-    public void exportZSweep(Simulation simulation, File simulationDirectory, String fileSeparator, Scene sce, ScalarDisplayer currentScalarDisplayer, Units currentUnits) {
-        Simulation simulation_0 = simulation;
-        String sep = fileSeparator;
-        Scene scene = sce;
-        File dir = new File(simulationDirectory + sep + scene.getPresentationName() + "Z Sweep");
-        ScalarDisplayer scalarDisplayer = currentScalarDisplayer;
-        Units units = currentUnits;
+    public void exportZSweep(File simulationDirectory, String fileSeparator, Scene scene, ScalarDisplayer scalarDisplayer) {
+        File dir = new File(simulationDirectory + fileSeparator + "Z Sweep");
         scalarDisplayer.getAnimationManager().setMode(DisplayerAnimationMode.SWEEP);
         AnimationDirector animationDirector = scene.getAnimationDirector();
 
@@ -264,7 +207,7 @@ public class ExporterV2 extends StarMacro {
             animationSettings.setStart(-1.0);
 
             CurrentView view = scene.getCurrentView();
-            view.setInput(new DoubleVector(new double[]{0.8, 0.0, 0.8}), new DoubleVector(new double[]{0.8, 30.8059436014962, 0.8}), new DoubleVector(new double[]{0.0, 0.0, 1.0}), 1.3052619222005157, 1, 30.0);
+            view.setInput(new DoubleVector(new double[]{0.8, 0.0, 0.8}), new DoubleVector(new double[]{0.8, -30.8059436014962, 0.8}), new DoubleVector(new double[]{0.0, 0.0, 1.0}), 1.3052619222005157, 1, 30.0);
 
             animationDirector.setIsRecording(true);
             animationDirector.record(800, 600, 15.0, 0.0, 20.0, dir.getAbsolutePath(), 1, true, false, VideoEncodingQualityEnum.Q20);
@@ -292,9 +235,10 @@ public class ExporterV2 extends StarMacro {
         multiValue_0.getValueQuantities().setUnits(u);
         multiValue_0.getValueQuantities().setArray(new DoubleVector(new double[] {0.0}));
         planeSection.setValueMode(ValueMode.SINGLE);
-        //scene.setTransparencyOverrideMode(SceneTransparencyOverride.USE_DISPLAYER_PROPERTY);
+        scene.setTransparencyOverrideMode(SceneTransparencyOverride.USE_DISPLAYER_PROPERTY);
     }
 
+    /*
     public void createYPlane(Units u, Scene sce, Simulation sim) {
         Simulation simulation_0 = sim;
         Scene scene = sce;
@@ -359,6 +303,7 @@ public class ExporterV2 extends StarMacro {
 
         planeSection.setPresentationName("Y Normal");
     }
+
     public void createXPlane (Units u, Scene sce, Simulation sim) {
         Simulation simulation_0 = sim;
         Scene scene = sce;
@@ -404,6 +349,7 @@ public class ExporterV2 extends StarMacro {
 
         planeSection.setPresentationName("X Normal");
     }
+     */
     public void createZPlane (Units u, Scene sce, Simulation sim, CoordinateSystem coords) {
         PlaneSection planeSection = planeSetup(sim, sce, u);
 
@@ -418,24 +364,45 @@ public class ExporterV2 extends StarMacro {
         planeSection.setPresentationName("Z Normal");
     }
 
-    public PlaneSection planeSetup (Simulation sim, Scene sce, Units u) {
-        Simulation simulation_0 = sim;
-        Scene scene = sce;
-        Units units[] = new Units[3];
-        for (int i = 0; i < 3; i++) {
-            units[i] = u;
-        }
+    public void createYPlane (Units u, Scene sce, Simulation sim, CoordinateSystem coords) {
+        PlaneSection planeSection = planeSetup(sim, sce, u);
 
-        scene.setTransparencyOverrideMode(SceneTransparencyOverride.MAKE_SCENE_TRANSPARENT);
+        planeSection.getOrientationCoordinate().setValue(new DoubleVector(new double[] {0.0, 1.0, 0.0}));
 
-        Region region_0 = simulation_0.getRegionManager().getRegion("Region");
-        Region region_1 = simulation_0.getRegionManager().getRegion("Rad");
+        planeSection.getOrientationCoordinate().setCoordinate(u, u, u, new DoubleVector(new double[] {0.0, 1.0, 0.0}));
+
+        planeSection.getOrientationCoordinate().setCoordinateSystem(coords);
+
+        fuckKnowsFunction(sce, planeSection, u);
+
+        planeSection.setPresentationName("Y Normal");
+    }
+
+    public void createXPlane (Units u, Scene sce, Simulation sim, CoordinateSystem coords) {
+        PlaneSection planeSection = planeSetup(sim, sce, u);
+
+        planeSection.getOrientationCoordinate().setValue(new DoubleVector(new double[] {1.0, 0.0, 0.0}));
+
+        planeSection.getOrientationCoordinate().setCoordinate(u, u, u, new DoubleVector(new double[] {1.0, 0.0, 0.0}));
+
+        planeSection.getOrientationCoordinate().setCoordinateSystem(coords);
+
+        fuckKnowsFunction(sce, planeSection, u);
+
+        planeSection.setPresentationName("X Normal");
+    }
+
+    public PlaneSection planeSetup (Simulation sim, Scene scene, Units units) {
+        //scene.setTransparencyOverrideMode(SceneTransparencyOverride.MAKE_SCENE_TRANSPARENT);
+
+        Region region_0 = sim.getRegionManager().getRegion("Region");
+        Region region_1 = sim.getRegionManager().getRegion("Rad");
 
         scene.getCreatorGroup().setObjects(region_0, region_1);
         scene.getCreatorGroup().setQuery(null);
 
-        PlaneSection planeSection = (PlaneSection) simulation_0.getPartManager().createImplicitPart(new NeoObjectVector(new Object[] {}), new DoubleVector(new double[] {0.0, 0.0, 1.0}), new DoubleVector(new double[] {0.0, 0.0, 0.0}), 0, 1, new DoubleVector(new double[] {0.0}));
-        LabCoordinateSystem coordinateSystem = simulation_0.getCoordinateSystemManager().getLabCoordinateSystem();
+        PlaneSection planeSection = (PlaneSection) sim.getPartManager().createImplicitPart(new NeoObjectVector(new Object[] {}), new DoubleVector(new double[] {0.0, 0.0, 1.0}), new DoubleVector(new double[] {0.0, 0.0, 0.0}), 0, 1, new DoubleVector(new double[] {0.0}));
+        LabCoordinateSystem coordinateSystem = sim.getCoordinateSystemManager().getLabCoordinateSystem();
         planeSection.setCoordinateSystem(coordinateSystem);
 
         planeSection.getInputParts().setQuery(null);
@@ -444,11 +411,11 @@ public class ExporterV2 extends StarMacro {
 
         planeSection.getOriginCoordinate().setValue(new DoubleVector(new double[] {0.0, 0.0, 0.0}));
 
-        planeSection.getOriginCoordinate().setCoordinate(u, u, u, new DoubleVector(new double[] {0.0, 0.0, 0.0}));
+        planeSection.getOriginCoordinate().setCoordinate(units, units, units, new DoubleVector(new double[] {0.0, 0.0, 0.0}));
 
         planeSection.getOriginCoordinate().setCoordinateSystem(coordinateSystem);
 
-        planeSection.getOrientationCoordinate().setUnits(u);
+        planeSection.getOrientationCoordinate().setUnits(units);
 
         planeSection.getOrientationCoordinate().setDefinition("");
 
