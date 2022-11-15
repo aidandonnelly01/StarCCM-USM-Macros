@@ -107,14 +107,23 @@ public class ExporterV2 extends StarMacro {
                     createZPlane(units, scene, simulation, coordinateSystem);
                     createYPlane(units, scene, simulation, coordinateSystem);
                     createXPlane(units, scene, simulation, coordinateSystem);
+
+                    //moved for debugging purposes
+                    exportSweep(simulation, simulationDirectory, sep, scene);
                 } else {
                     //This just creates the other scenes
                     displayer.getScalarDisplayQuantity().setFieldFunction(func);
                 }
                 //Calls the export scene method
-                exportScene(scene, simulationDirectory, sep);
+                //exportScene(scene, simulationDirectory, sep);
+                PartDisplayer partDisplayer = ((PartDisplayer) scene.getDisplayerManager().getObject("Outline 1"));
+                partDisplayer.setOutline(false);
+
+                SolidBackgroundColor solidBackgroundColor_0 = scene.getSolidBackgroundColor();
+
+                solidBackgroundColor_0.setColor(new DoubleVector(new double[] {0.4666999876499176, 0.53329998254776, 0.6000000238418579}));
                 //Calls the export sweep method
-                exportSweep(simulation, simulationDirectory, sep, scene);
+                //exportSweep(simulation, simulationDirectory, sep, scene);
             }
         }
     /*
@@ -161,9 +170,9 @@ public class ExporterV2 extends StarMacro {
         scalarDisplayer.getInputParts().setObjects(xPlane, yPlane, zPlane);
 
         if (dir.mkdir()) {
-            exportXSweep(dir, fileSeparator, currentScene, scalarDisplayer);
+            //exportXSweep(dir, fileSeparator, currentScene, scalarDisplayer);
             exportYSweep(dir, fileSeparator, currentScene, scalarDisplayer);
-            exportZSweep(dir, fileSeparator, currentScene, scalarDisplayer);
+            //exportZSweep(dir, fileSeparator, currentScene, scalarDisplayer);
         }
     }
 
@@ -179,15 +188,16 @@ public class ExporterV2 extends StarMacro {
 
         if (dir.mkdir()) {
             SectionAnimationSettings animationSettings = ((SectionAnimationSettings) currentScalarDisplayer.getAnimationManager().getObject("Y Normal"));
-            animationSettings.setCycleTime(20.0);
+            //animationSettings.setCycleTime(20.0);
             animationSettings.setAutoRange(false);
-            animationSettings.setStart(-1.0);
+            animationSettings.setStart(-0.3);
+            animationSettings.setEnd(-1.4);
 
             CurrentView view = scene.getCurrentView();
-            view.setInput(new DoubleVector(new double[]{0.8, 0.0, 0.8}), new DoubleVector(new double[]{0.8, -30.8059436014962, 0.8}), new DoubleVector(new double[]{0.0, 0.0, 1.0}), 1.3052619222005157, 1, 30.0);
+            view.setInput(new DoubleVector(new double[]{1.1222830462226314, -7.001308425034657, 1.0809199577009214}), new DoubleVector(new double[]{1.1222830462226314, -0.00010000203239712846, 1.0809199577009214}), new DoubleVector(new double[]{0.0, 0.0, 1.0}), 1.7867152313349846, 1, 30.0);
 
             animationDirector.setIsRecording(true);
-            animationDirector.record(800, 600, 15.0, -1.0, 20.0, dir.getAbsolutePath(), 1, true, false, VideoEncodingQualityEnum.Q20);
+            animationDirector.record(1920, 1080, 10.0, 0.0, 10.0, dir.getAbsolutePath(), 1, true, false, VideoEncodingQualityEnum.Q20);
             animationDirector.setIsRecording(false);
         }
 
@@ -200,15 +210,16 @@ public class ExporterV2 extends StarMacro {
 
         if (dir.mkdir()) {
             SectionAnimationSettings animationSettings = ((SectionAnimationSettings) scalarDisplayer.getAnimationManager().getObject("X Normal"));
-            animationSettings.setCycleTime(20.0);
+            animationSettings.setCycleTime(13.0);
             animationSettings.setAutoRange(false);
-            animationSettings.setStart(-1.0);
+            animationSettings.setStart(-1.15);
+            animationSettings.setEnd(2.5);
 
             CurrentView view = scene.getCurrentView();
-            view.setInput(new DoubleVector(new double[]{0.8, 0.0, 0.8}), new DoubleVector(new double[]{0.8, 30.8059436014962, 0.8}), new DoubleVector(new double[]{0.0, 0.0, 1.0}), 1.3052619222005157, 1, 30.0);
+            view.setInput(new DoubleVector(new double[]{-11.399494936611665, -1.4235649330303537, 0.6076538377070125}), new DoubleVector(new double[]{-1.500000000997599 , -1.4235649330303537, 0.6076538377070125}), new DoubleVector(new double[]{0.0, 0.0, 1.0}), 0.8960019770398103, 1, 30.0);
 
             animationDirector.setIsRecording(true);
-            animationDirector.record(800, 600, 15.0, 0.0, 20.0, dir.getAbsolutePath(), 1, true, false, VideoEncodingQualityEnum.Q20);
+            animationDirector.record(1980, 1080, 5.0, 0.0, 13.0, dir.getAbsolutePath(), 1, true, false, VideoEncodingQualityEnum.Q20);
             animationDirector.setIsRecording(false);
         }
     }
@@ -220,15 +231,16 @@ public class ExporterV2 extends StarMacro {
 
         if (dir.mkdir()) {
             SectionAnimationSettings animationSettings = ((SectionAnimationSettings) scalarDisplayer.getAnimationManager().getObject("Z Normal"));
-            animationSettings.setCycleTime(20.0);
+            animationSettings.setCycleTime(13.0);
             animationSettings.setAutoRange(false);
-            animationSettings.setStart(-1.0);
+            animationSettings.setStart(-1.4);
+            animationSettings.setEnd(-2.5);
 
             CurrentView view = scene.getCurrentView();
-            view.setInput(new DoubleVector(new double[]{0.8, 0.0, 0.8}), new DoubleVector(new double[]{0.8, -30.8059436014962, 0.8}), new DoubleVector(new double[]{0.0, 0.0, 1.0}), 1.3052619222005157, 1, 30.0);
+            view.setInput(new DoubleVector(new double[]{0.9371019096585375, -1.4819896673401434, 37.24694708761353}), new DoubleVector(new double[]{0.9371019096585375, -1.4819896673401434, 0.2499999944870197}), new DoubleVector(new double[]{0.0, 1.0, 0.0}), 1.7867152313349846, 1, 30.0);
 
             animationDirector.setIsRecording(true);
-            animationDirector.record(800, 600, 15.0, 0.0, 20.0, dir.getAbsolutePath(), 1, true, false, VideoEncodingQualityEnum.Q20);
+            animationDirector.record(1920, 1080, 10.0, 0.0, 13.0, dir.getAbsolutePath(), 1, true, false, VideoEncodingQualityEnum.Q20);
             animationDirector.setIsRecording(false);
         }
     }
@@ -263,119 +275,6 @@ public class ExporterV2 extends StarMacro {
         scene.setTransparencyOverrideMode(SceneTransparencyOverride.USE_DISPLAYER_PROPERTY);
     }
 
-    /* Spare code I don't want to delete just yet
-    public void createYPlane(Units u, Scene sce, Simulation sim) {
-        Simulation simulation_0 = sim;
-        Scene scene = sce;
-        Units units[] = new Units[3];
-        for (int i = 0; i < 3; i++) {
-            units[i] = u;
-        }
-
-        //scene.setTransparencyOverrideMode(SceneTransparencyOverride.MAKE_SCENE_TRANSPARENT);
-
-        Region region_0 = simulation_0.getRegionManager().getRegion("Region");
-        Region region_1 = simulation_0.getRegionManager().getRegion("Rad");
-
-        scene.getCreatorGroup().setObjects(region_0, region_1);
-        scene.getCreatorGroup().setQuery(null);
-
-        PlaneSection planeSection = (PlaneSection) simulation_0.getPartManager().createImplicitPart(new NeoObjectVector(new Object[] {}), new DoubleVector(new double[] {0.0, 0.0, 1.0}), new DoubleVector(new double[] {0.0, 0.0, 0.0}), 0, 1, new DoubleVector(new double[] {0.0}));
-        LabCoordinateSystem coordinateSystem = simulation_0.getCoordinateSystemManager().getLabCoordinateSystem();
-        planeSection.setCoordinateSystem(coordinateSystem);
-
-        planeSection.getInputParts().setQuery(null);
-
-        planeSection.getInputParts().setObjects(region_0, region_1);
-
-        planeSection.getOriginCoordinate().setValue(new DoubleVector(new double[] {0.0, 0.0, 0.0}));
-
-        planeSection.getOriginCoordinate().setCoordinate(u, u, u, new DoubleVector(new double[] {0.0, 0.0, 0.0}));
-
-        planeSection.getOriginCoordinate().setCoordinateSystem(coordinateSystem);
-
-        planeSection.getOrientationCoordinate().setUnits(u);
-
-        planeSection.getOrientationCoordinate().setDefinition("");
-
-        planeSection.getOrientationCoordinate().setValue(new DoubleVector(new double[]{0.0, 1.0, 0.0}));
-
-        planeSection.getOrientationCoordinate().setCoordinate(u, u, u, new DoubleVector(new double[]{0.0, 1.0, 0.0}));
-
-        planeSection.getOrientationCoordinate().setCoordinateSystem(coordinateSystem);
-
-        //Only our dear sweet lord Jesus Christ knows what the fuck is going on here
-        SingleValue singleValue_0 = planeSection.getSingleValue();
-        singleValue_0.getValueQuantity().setValue(0.0);
-        singleValue_0.getValueQuantity().setUnits(u);
-        RangeMultiValue rangeMultiValue_0 = planeSection.getRangeMultiValue();
-        rangeMultiValue_0.setNValues(2);
-        rangeMultiValue_0.getStartQuantity().setValue(0.0);
-        rangeMultiValue_0.getStartQuantity().setUnits(u);
-        rangeMultiValue_0.getEndQuantity().setValue(1.0);
-        rangeMultiValue_0.getEndQuantity().setUnits(u);
-        DeltaMultiValue deltaMultiValue_0 = planeSection.getDeltaMultiValue();
-        deltaMultiValue_0.setNValues(2);
-        deltaMultiValue_0.getStartQuantity().setValue(0.0);
-        deltaMultiValue_0.getStartQuantity().setUnits(u);
-        deltaMultiValue_0.getDeltaQuantity().setValue(1.0);
-        deltaMultiValue_0.getDeltaQuantity().setUnits(u);
-        MultiValue multiValue_0 = planeSection.getArbitraryMultiValue();
-        multiValue_0.getValueQuantities().setUnits(u);
-        multiValue_0.getValueQuantities().setArray(new DoubleVector(new double[] {0.0}));
-        planeSection.setValueMode(ValueMode.SINGLE);
-        scene.setTransparencyOverrideMode(SceneTransparencyOverride.USE_DISPLAYER_PROPERTY);
-
-        planeSection.setPresentationName("Y Normal");
-    }
-
-    public void createXPlane (Units u, Scene sce, Simulation sim) {
-        Simulation simulation_0 = sim;
-        Scene scene = sce;
-
-        Units units[] = new Units[3];
-        for (int i = 0; i < 3; i++) {
-            units[i] = u;
-        }
-
-        //scene.setTransparencyOverrideMode(SceneTransparencyOverride.MAKE_SCENE_TRANSPARENT);
-
-        Region region_0 = simulation_0.getRegionManager().getRegion("Region");
-        Region region_1 = simulation_0.getRegionManager().getRegion("Rad");
-
-        scene.getCreatorGroup().setObjects(region_0, region_1);
-        scene.getCreatorGroup().setQuery(null);
-
-        PlaneSection planeSection = (PlaneSection) simulation_0.getPartManager().createImplicitPart(new NeoObjectVector(new Object[] {}), new DoubleVector(new double[] {0.0, 0.0, 1.0}), new DoubleVector(new double[] {0.0, 0.0, 0.0}), 0, 1, new DoubleVector(new double[] {0.0}));
-        LabCoordinateSystem coordinateSystem = simulation_0.getCoordinateSystemManager().getLabCoordinateSystem();
-        planeSection.setCoordinateSystem(coordinateSystem);
-
-        planeSection.getInputParts().setQuery(null);
-
-        planeSection.getInputParts().setObjects(region_0, region_1);
-
-        planeSection.getOriginCoordinate().setValue(new DoubleVector(new double[] {0.0, 0.0, 0.0}));
-
-        planeSection.getOriginCoordinate().setCoordinate(u, u, u, new DoubleVector(new double[] {0.0, 0.0, 0.0}));
-
-        planeSection.getOriginCoordinate().setCoordinateSystem(coordinateSystem);
-
-        planeSection.getOrientationCoordinate().setUnits(u);
-
-        planeSection.getOrientationCoordinate().setDefinition("");
-
-        planeSection.getOrientationCoordinate().setValue(new DoubleVector(new double[] {1.0, 0.0, 0.0}));
-
-        planeSection.getOrientationCoordinate().setCoordinate(u, u, u, new DoubleVector(new double[] {1.0, 0.0, 0.0}));
-
-        planeSection.getOrientationCoordinate().setCoordinateSystem(coordinateSystem);
-
-        fuckKnowsFunction(scene, planeSection, u);
-
-        planeSection.setPresentationName("X Normal");
-    }
-     */
-
     /*
         Next 3 methods are pretty much the same, they call a setup method and then create the X, Y and Z planes
         Only 1 method is commented on because they're literally the same except for the coordinates it uses.
@@ -385,7 +284,7 @@ public class ExporterV2 extends StarMacro {
         PlaneSection planeSection = planeSetup(sim, sce, u);
 
         //Seems to set the value of the orientation then the coordinate, what I think happens here is that it sets where the plane is
-        //and then sets the way the plane faces, is the best way to exlpain it.
+        //and then sets the way the plane faces, is the best way to explain it.
         planeSection.getOrientationCoordinate().setValue(new DoubleVector(new double[] {0.0, 0.0, 1.0}));
 
         planeSection.getOrientationCoordinate().setCoordinate(u, u, u, new DoubleVector(new double[] {0.0, 0.0, 1.0}));
@@ -437,7 +336,7 @@ public class ExporterV2 extends StarMacro {
         Scope to improve efficiency of this method, see comments within.
      */
     public PlaneSection planeSetup (Simulation sim, Scene scene, Units units) {
-        //scene.setTransparencyOverrideMode(SceneTransparencyOverride.MAKE_SCENE_TRANSPARENT);
+        scene.setTransparencyOverrideMode(SceneTransparencyOverride.MAKE_SCENE_TRANSPARENT);
 
         //Creates the two regions of the car, 'Region' seems to be the main car, 'Rad' is the radiator specifically,
         //for sims that aren't just for cooling, the region Rad may not exist, so that is something to look at
