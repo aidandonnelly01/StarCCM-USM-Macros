@@ -1,5 +1,6 @@
-//StarCCM exporter macro 
-//V2.0
+//StarCCM exporter macro
+//Aidan Donnelly
+//University of Strathclyde Motorsport
 
 //import statements required for java stuff
 import java.util.*;
@@ -62,9 +63,9 @@ public class ExporterV2 extends StarMacro {
         LabCoordinateSystem coordinateSystem = simulation.getCoordinateSystemManager().getLabCoordinateSystem();
 
         /*
-        This takes in all the boundaries of the car, and adds them to an ArrayList so that the 3D model of the car can
-        be created in the scene. Some of these methods are depreciated, so they may have to be replaced, but it works for
-        now and there seems to be no other way to do this.
+            This takes in all the boundaries of the car, and adds them to an ArrayList so that the 3D model of the car can
+            be created in the scene. Some of these methods are depreciated, so they may have to be replaced, but it works for
+            now and there seems to be no other way to do this.
         */
         Collection<NamedObject> sources = new ArrayList<>();
         sources.addAll(simulation.getSceneManager().getBoundaryParts());
@@ -116,8 +117,12 @@ public class ExporterV2 extends StarMacro {
                 exportSweep(simulation, simulationDirectory, sep, scene);
             }
         }
-
+    /*
+        This method exports the all plots created in the sim as both .jpg files and as .csv files
+        It takes in the current sim, the sim directory and the file separator as parameters
+     */
     public void getPlots(Simulation simulation, File simulationDirectory, String fileSeparator) {
+        //Creates a new directory within the output directory called 'plots' to store all the plots, I guess
         File dir = new File(simulationDirectory + fileSeparator + "Plots");
 
         if (dir.mkdir()) {
@@ -133,6 +138,14 @@ public class ExporterV2 extends StarMacro {
         }
     }
 
+    /*
+        This method sets up the sweep animations, it adds the X, Y and Z plane to the scene that gets passed in,
+        so the animation can run. It takes in the current sim, the directory, file separator and the current scene that
+        is passed from the createScenes method.
+
+        At the moment, all 3 planes are added at once, meaning it will animate in all 3 planes at once, which is obviously
+        a bit of a burden on the processor and generally inefficient, definitely scope to fix this
+     */
     public void exportSweep(Simulation simulation, File simulationDirectory, String fileSeparator, Scene currentScene) {
         File dir = new File(simulationDirectory + fileSeparator + currentScene.getPresentationName() + " Sweeps");
         ScalarDisplayer scalarDisplayer = ((ScalarDisplayer) currentScene.getDisplayerManager().getObject("Scalar 1"));
@@ -154,6 +167,11 @@ public class ExporterV2 extends StarMacro {
         }
     }
 
+    /*
+        The next 3 methods are pretty much the same, exporting the X, Y and Z sweeps, not much to say here tbh
+
+        Probably scope to reduce duplication. Probably.
+     */
     public void exportYSweep(File simulationDirectory, String fileSeparator, Scene scene, ScalarDisplayer currentScalarDisplayer) {
         File dir = new File(simulationDirectory + fileSeparator + " Y Sweep");
         currentScalarDisplayer.getAnimationManager().setMode(DisplayerAnimationMode.SWEEP);
@@ -215,6 +233,13 @@ public class ExporterV2 extends StarMacro {
         }
     }
 
+    /*
+        This seems to be some sort of tail function that gets executed after each plane is created, thought I'd make a
+        method to reduce duplication, no idea what this does though.
+        @param scene - current scene
+        @param planeSection - current plane section, X,Y or Z
+        @param u - current units, usually metres (m)
+     */
     public void fuckKnowsFunction(Scene scene, PlaneSection planeSection, Units u) {
         SingleValue singleValue_0 = planeSection.getSingleValue();
         singleValue_0.getValueQuantity().setValue(0.0);
@@ -238,7 +263,7 @@ public class ExporterV2 extends StarMacro {
         scene.setTransparencyOverrideMode(SceneTransparencyOverride.USE_DISPLAYER_PROPERTY);
     }
 
-    /*
+    /* Spare code I don't want to delete just yet
     public void createYPlane(Units u, Scene sce, Simulation sim) {
         Simulation simulation_0 = sim;
         Scene scene = sce;
@@ -350,20 +375,32 @@ public class ExporterV2 extends StarMacro {
         planeSection.setPresentationName("X Normal");
     }
      */
+
+    /*
+        Next 3 methods are pretty much the same, they call a setup method and then create the X, Y and Z planes
+        Only 1 method is commented on because they're literally the same except for the coordinates it uses.
+     */
     public void createZPlane (Units u, Scene sce, Simulation sim, CoordinateSystem coords) {
+        //Calls the setup function, which creates a general plane before the method gives it properties
         PlaneSection planeSection = planeSetup(sim, sce, u);
 
+        //Seems to set the value of the orientation then the coordinate, what I think happens here is that it sets where the plane is
+        //and then sets the way the plane faces, is the best way to exlpain it.
         planeSection.getOrientationCoordinate().setValue(new DoubleVector(new double[] {0.0, 0.0, 1.0}));
 
         planeSection.getOrientationCoordinate().setCoordinate(u, u, u, new DoubleVector(new double[] {0.0, 0.0, 1.0}));
 
+        //This method just sets the coordinate system to the standard one used by the sim
         planeSection.getOrientationCoordinate().setCoordinateSystem(coords);
 
+        //Calls the tail function on the plane section to finish setup
         fuckKnowsFunction(sce, planeSection, u);
 
+        //Names the plane
         planeSection.setPresentationName("Z Normal");
     }
 
+    //See createZPlane for comments
     public void createYPlane (Units u, Scene sce, Simulation sim, CoordinateSystem coords) {
         PlaneSection planeSection = planeSetup(sim, sce, u);
 
@@ -378,6 +415,7 @@ public class ExporterV2 extends StarMacro {
         planeSection.setPresentationName("Y Normal");
     }
 
+    //See createZPlane for comments
     public void createXPlane (Units u, Scene sce, Simulation sim, CoordinateSystem coords) {
         PlaneSection planeSection = planeSetup(sim, sce, u);
 
@@ -392,15 +430,25 @@ public class ExporterV2 extends StarMacro {
         planeSection.setPresentationName("X Normal");
     }
 
+    /*
+        This method creates a plane, before the X, Y and Z methods make them specific to their axes.
+        Takes in the sim, a scene (any will do) and the units being used in the sim (usually metres).
+
+        Scope to improve efficiency of this method, see comments within.
+     */
     public PlaneSection planeSetup (Simulation sim, Scene scene, Units units) {
         //scene.setTransparencyOverrideMode(SceneTransparencyOverride.MAKE_SCENE_TRANSPARENT);
 
+        //Creates the two regions of the car, 'Region' seems to be the main car, 'Rad' is the radiator specifically,
+        //for sims that aren't just for cooling, the region Rad may not exist, so that is something to look at
         Region region_0 = sim.getRegionManager().getRegion("Region");
         Region region_1 = sim.getRegionManager().getRegion("Rad");
 
+        //Adds the objects to the plane, I think
         scene.getCreatorGroup().setObjects(region_0, region_1);
         scene.getCreatorGroup().setQuery(null);
 
+        //Creates the plane itself and sets the coordinate system
         PlaneSection planeSection = (PlaneSection) sim.getPartManager().createImplicitPart(new NeoObjectVector(new Object[] {}), new DoubleVector(new double[] {0.0, 0.0, 1.0}), new DoubleVector(new double[] {0.0, 0.0, 0.0}), 0, 1, new DoubleVector(new double[] {0.0}));
         LabCoordinateSystem coordinateSystem = sim.getCoordinateSystemManager().getLabCoordinateSystem();
         planeSection.setCoordinateSystem(coordinateSystem);
@@ -409,16 +457,19 @@ public class ExporterV2 extends StarMacro {
 
         planeSection.getInputParts().setObjects(region_0, region_1);
 
+        //Coordinates are set to (0,0,0) to start, these get changed later
         planeSection.getOriginCoordinate().setValue(new DoubleVector(new double[] {0.0, 0.0, 0.0}));
 
         planeSection.getOriginCoordinate().setCoordinate(units, units, units, new DoubleVector(new double[] {0.0, 0.0, 0.0}));
 
+        //Sets some extra things that the plane needs
         planeSection.getOriginCoordinate().setCoordinateSystem(coordinateSystem);
 
         planeSection.getOrientationCoordinate().setUnits(units);
 
         planeSection.getOrientationCoordinate().setDefinition("");
 
+        //returns the generic plane section
         return planeSection;
     }
 }
