@@ -190,8 +190,8 @@ public class ExporterV2 extends StarMacro {
             SectionAnimationSettings animationSettings = ((SectionAnimationSettings) currentScalarDisplayer.getAnimationManager().getObject("Y Normal"));
             //animationSettings.setCycleTime(20.0);
             animationSettings.setAutoRange(false);
-            animationSettings.setStart(-0.3);
-            animationSettings.setEnd(-1.4);
+            animationSettings.setStart(1.3);
+            animationSettings.setEnd(-1.3);
 
             CurrentView view = scene.getCurrentView();
             view.setInput(new DoubleVector(new double[]{1.1222830462226314, -7.001308425034657, 1.0809199577009214}), new DoubleVector(new double[]{1.1222830462226314, -0.00010000203239712846, 1.0809199577009214}), new DoubleVector(new double[]{0.0, 0.0, 1.0}), 1.7867152313349846, 1, 30.0);
