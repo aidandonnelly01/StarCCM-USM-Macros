@@ -109,21 +109,15 @@ public class ExporterV2 extends StarMacro {
                     createXPlane(units, scene, simulation, coordinateSystem);
 
                     //moved for debugging purposes
-                    exportSweep(simulation, simulationDirectory, sep, scene);
+                    //exportSweep(simulation, simulationDirectory, sep, scene);
                 } else {
                     //This just creates the other scenes
                     displayer.getScalarDisplayQuantity().setFieldFunction(func);
                 }
                 //Calls the export scene method
                 //exportScene(scene, simulationDirectory, sep);
-                PartDisplayer partDisplayer = ((PartDisplayer) scene.getDisplayerManager().getObject("Outline 1"));
-                partDisplayer.setOutline(false);
-
-                SolidBackgroundColor solidBackgroundColor_0 = scene.getSolidBackgroundColor();
-
-                solidBackgroundColor_0.setColor(new DoubleVector(new double[] {0.4666999876499176, 0.53329998254776, 0.6000000238418579}));
                 //Calls the export sweep method
-                //exportSweep(simulation, simulationDirectory, sep, scene);
+                exportSweep(simulation, simulationDirectory, sep, scene);
             }
         }
     /*
@@ -161,6 +155,8 @@ public class ExporterV2 extends StarMacro {
         scalarDisplayer.getAnimationManager().setMode(DisplayerAnimationMode.SWEEP);
         scalarDisplayer.getInputParts().setQuery(null);
 
+        scenePresentation(currentScene);
+
         PlaneSection xPlane = ((PlaneSection) simulation.getPartManager().getObject("X Normal"));
 
         PlaneSection yPlane = ((PlaneSection) simulation.getPartManager().getObject("Y Normal"));
@@ -170,10 +166,22 @@ public class ExporterV2 extends StarMacro {
         scalarDisplayer.getInputParts().setObjects(xPlane, yPlane, zPlane);
 
         if (dir.mkdir()) {
-            //exportXSweep(dir, fileSeparator, currentScene, scalarDisplayer);
+            exportXSweep(dir, fileSeparator, currentScene, scalarDisplayer);
             exportYSweep(dir, fileSeparator, currentScene, scalarDisplayer);
-            //exportZSweep(dir, fileSeparator, currentScene, scalarDisplayer);
+            exportZSweep(dir, fileSeparator, currentScene, scalarDisplayer);
         }
+    }
+
+    public void scenePresentation(Scene sce) {
+        Scene scene = sce;
+
+        SolidBackgroundColor solidBackgroundColor = scene.getSolidBackgroundColor();
+
+        solidBackgroundColor.setColor(new DoubleVector(new double[] {0.1599999964237213, 0.14000000059604645, 0.12999999523162842}));
+
+        PartDisplayer outline = ((PartDisplayer) scene.getDisplayerManager().getObject("Outline 1"));
+
+        outline.setOutline(false);
     }
 
     /*
