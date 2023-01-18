@@ -14,7 +14,9 @@ import star.vis.*;
 //Class name is exporter inheriting methods from StarMacro 
 public class ExporterV2 extends StarMacro {
 
-    //Star searches for and runs the 'execute' method, all methods to be run should be in here
+    /**
+     * This method is where the sim begins execution
+     */
     public void execute() {
         //Creates simulation object named simulation_0
         Simulation simulation_0 = getActiveSimulation();
@@ -35,28 +37,34 @@ public class ExporterV2 extends StarMacro {
         getPlots(simulation_0, dir, sep);
         //Calls thr method to create the scenes
         createScenes(simulation_0, dir, sep);
+        //Deletes all parts and scenes that was created by the macro
+        cleanUp(simulation_0);
     }
 
-    /*
-        This should export all the scenes, it passes in a scene, the CWD and the operating system's file separator,
-        for windows (other operating systems are available) this would be a \
-    */
+    /**
+     * This method should export all the scenes for the sim to their 3D representation files
+     *
+     * @param sce Current Scene to be exported
+     * @param simulationDirectory The simulation's created directory
+     * @param fileSeparator File separator for the current operating system
+     */
     public void exportScene(Scene sce, File simulationDirectory, String fileSeparator) {
-        Scene scene = sce;
         File dir = new File (simulationDirectory.getAbsolutePath() + fileSeparator + "Scenes");
         while (!dir.mkdir()) {
             dir = new File(dir.getAbsolutePath() + " Copy");
         }
-        scene.printAndWait(resolvePath(dir + fileSeparator + scene.getPresentationName() + " .jpg"), 1, 1920, 1080);
+        sce.printAndWait(resolvePath(dir + fileSeparator + sce.getPresentationName() + " .jpg"), 1, 1920, 1080);
         //Commented out for debugging purposes, this takes a lot of time to run
         //scene.export3DSceneFileAndWait(resolvePath(dir + sep + scene.getPresentationName() + " .sce"), scene.getPresentationName(), "", false, false);
     }
 
-    /*
-        This will create the scenes, inside this method is the method to export the scenes and sweeps, this method
-        takes in the current simulation, the directory where all the exports are saved, and the standard file separator
-        for the user's operating system.
-    */
+    /**
+     * This method should create all the scenes required
+     *
+     * @param simulation Current sim
+     * @param simulationDirectory Current simulation's created directory
+     * @param sep File separator for the current operating system
+     */
     private void createScenes(Simulation simulation, File simulationDirectory, String sep) {
         String[] functionNames = {"Velocity", "PressureCoefficient", "TotalPressureCoefficient", "TurbulentKineticEnergy"};
         Units units = simulation.getUnitsManager().getObject("m");
@@ -120,9 +128,13 @@ public class ExporterV2 extends StarMacro {
                 exportSweep(simulation, simulationDirectory, sep, scene);
             }
         }
-    /*
-        This method exports the all plots created in the sim as both .jpg files and as .csv files
-        It takes in the current sim, the sim directory and the file separator as parameters
+
+    /**
+     * This method should export all the scenes for the sim to their 3D representation files
+     *
+     * @param simulation Current simulation
+     * @param simulationDirectory The simulation's created directory
+     * @param fileSeparator File separator for the current operating system
      */
     public void getPlots(Simulation simulation, File simulationDirectory, String fileSeparator) {
         //Creates a new directory within the output directory called 'plots' to store all the plots, I guess
@@ -141,13 +153,13 @@ public class ExporterV2 extends StarMacro {
         }
     }
 
-    /*
-        This method sets up the sweep animations, it adds the X, Y and Z plane to the scene that gets passed in,
-        so the animation can run. It takes in the current sim, the directory, file separator and the current scene that
-        is passed from the createScenes method.
-
-        At the moment, all 3 planes are added at once, meaning it will animate in all 3 planes at once, which is obviously
-        a bit of a burden on the processor and generally inefficient, definitely scope to fix this
+    /**
+     * This method sets up all the sweeps to be exported
+     *
+     * @param simulation Current simulation
+     * @param simulationDirectory The simulation's created directory
+     * @param fileSeparator File separator for the current operating system
+     * @param currentScene The scene to export the sweeps from
      */
     public void exportSweep(Simulation simulation, File simulationDirectory, String fileSeparator, Scene currentScene) {
         File dir = new File(simulationDirectory + fileSeparator + currentScene.getPresentationName() + " Sweeps");
@@ -157,21 +169,32 @@ public class ExporterV2 extends StarMacro {
 
         scenePresentation(currentScene);
 
-        PlaneSection xPlane = ((PlaneSection) simulation.getPartManager().getObject("X Normal"));
-
-        PlaneSection yPlane = ((PlaneSection) simulation.getPartManager().getObject("Y Normal"));
-
-        PlaneSection zPlane = ((PlaneSection) simulation.getPartManager().getObject("Z Normal"));
-
-        scalarDisplayer.getInputParts().setObjects(xPlane, yPlane, zPlane);
-
         if (dir.mkdir()) {
+            PlaneSection xPlane = ((PlaneSection) simulation.getPartManager().getObject("X Normal"));
+
+            PlaneSection yPlane = ((PlaneSection) simulation.getPartManager().getObject("Y Normal"));
+
+            PlaneSection zPlane = ((PlaneSection) simulation.getPartManager().getObject("Z Normal"));
+
+            scalarDisplayer.getInputParts().setObjects(xPlane);
             exportXSweep(dir, fileSeparator, currentScene, scalarDisplayer);
+            simulation.getPartManager().removeObjects(xPlane);
+
+
+            scalarDisplayer.getInputParts().setObjects(yPlane);
             exportYSweep(dir, fileSeparator, currentScene, scalarDisplayer);
+            simulation.getPartManager().removeObjects(yPlane);
+
+            scalarDisplayer.getInputParts().setObjects(zPlane);
             exportZSweep(dir, fileSeparator, currentScene, scalarDisplayer);
+            simulation.getPartManager().removeObjects(zPlane);
         }
     }
 
+    /**
+     *
+     * @param sce
+     */
     public void scenePresentation(Scene sce) {
         Scene scene = sce;
 
@@ -184,10 +207,12 @@ public class ExporterV2 extends StarMacro {
         outline.setOutline(false);
     }
 
-    /*
-        The next 3 methods are pretty much the same, exporting the X, Y and Z sweeps, not much to say here tbh
-
-        Probably scope to reduce duplication. Probably.
+    /**
+     *
+     * @param simulationDirectory
+     * @param fileSeparator
+     * @param scene
+     * @param currentScalarDisplayer
      */
     public void exportYSweep(File simulationDirectory, String fileSeparator, Scene scene, ScalarDisplayer currentScalarDisplayer) {
         File dir = new File(simulationDirectory + fileSeparator + " Y Sweep");
@@ -211,6 +236,13 @@ public class ExporterV2 extends StarMacro {
 
     }
 
+    /**
+     *
+     * @param simulationDirectory
+     * @param fileSeparator
+     * @param scene
+     * @param scalarDisplayer
+     */
     public void exportXSweep(File simulationDirectory, String fileSeparator, Scene scene, ScalarDisplayer scalarDisplayer) {
         File dir = new File(simulationDirectory + fileSeparator + "X Sweep");
         scalarDisplayer.getAnimationManager().setMode(DisplayerAnimationMode.SWEEP);
@@ -232,6 +264,13 @@ public class ExporterV2 extends StarMacro {
         }
     }
 
+    /**
+     *
+     * @param simulationDirectory
+     * @param fileSeparator
+     * @param scene
+     * @param scalarDisplayer
+     */
     public void exportZSweep(File simulationDirectory, String fileSeparator, Scene scene, ScalarDisplayer scalarDisplayer) {
         File dir = new File(simulationDirectory + fileSeparator + "Z Sweep");
         scalarDisplayer.getAnimationManager().setMode(DisplayerAnimationMode.SWEEP);
@@ -239,26 +278,25 @@ public class ExporterV2 extends StarMacro {
 
         if (dir.mkdir()) {
             SectionAnimationSettings animationSettings = ((SectionAnimationSettings) scalarDisplayer.getAnimationManager().getObject("Z Normal"));
-            animationSettings.setCycleTime(13.0);
+            animationSettings.setCycleTime(15.0);
             animationSettings.setAutoRange(false);
-            animationSettings.setStart(-1.4);
-            animationSettings.setEnd(-2.5);
+            animationSettings.setStart(0);
+            animationSettings.setEnd(2.5);
 
             CurrentView view = scene.getCurrentView();
             view.setInput(new DoubleVector(new double[]{0.9371019096585375, -1.4819896673401434, 37.24694708761353}), new DoubleVector(new double[]{0.9371019096585375, -1.4819896673401434, 0.2499999944870197}), new DoubleVector(new double[]{0.0, 1.0, 0.0}), 1.7867152313349846, 1, 30.0);
 
             animationDirector.setIsRecording(true);
-            animationDirector.record(1920, 1080, 10.0, 0.0, 13.0, dir.getAbsolutePath(), 1, true, false, VideoEncodingQualityEnum.Q20);
+            animationDirector.record(1920, 1080, 10.0, 0.0, 15.0, dir.getAbsolutePath(), 1, true, false, VideoEncodingQualityEnum.Q20);
             animationDirector.setIsRecording(false);
         }
     }
 
-    /*
-        This seems to be some sort of tail function that gets executed after each plane is created, thought I'd make a
-        method to reduce duplication, no idea what this does though.
-        @param scene - current scene
-        @param planeSection - current plane section, X,Y or Z
-        @param u - current units, usually metres (m)
+    /**
+     *
+     * @param scene
+     * @param planeSection
+     * @param u
      */
     public void fuckKnowsFunction(Scene scene, PlaneSection planeSection, Units u) {
         SingleValue singleValue_0 = planeSection.getSingleValue();
@@ -283,9 +321,12 @@ public class ExporterV2 extends StarMacro {
         scene.setTransparencyOverrideMode(SceneTransparencyOverride.USE_DISPLAYER_PROPERTY);
     }
 
-    /*
-        Next 3 methods are pretty much the same, they call a setup method and then create the X, Y and Z planes
-        Only 1 method is commented on because they're literally the same except for the coordinates it uses.
+    /**
+     *
+     * @param u
+     * @param sce
+     * @param sim
+     * @param coords
      */
     public void createZPlane (Units u, Scene sce, Simulation sim, CoordinateSystem coords) {
         //Calls the setup function, which creates a general plane before the method gives it properties
@@ -307,7 +348,13 @@ public class ExporterV2 extends StarMacro {
         planeSection.setPresentationName("Z Normal");
     }
 
-    //See createZPlane for comments
+    /**
+     *
+     * @param u
+     * @param sce
+     * @param sim
+     * @param coords
+     */
     public void createYPlane (Units u, Scene sce, Simulation sim, CoordinateSystem coords) {
         PlaneSection planeSection = planeSetup(sim, sce, u);
 
@@ -322,7 +369,13 @@ public class ExporterV2 extends StarMacro {
         planeSection.setPresentationName("Y Normal");
     }
 
-    //See createZPlane for comments
+    /**
+     *
+     * @param u
+     * @param sce
+     * @param sim
+     * @param coords
+     */
     public void createXPlane (Units u, Scene sce, Simulation sim, CoordinateSystem coords) {
         PlaneSection planeSection = planeSetup(sim, sce, u);
 
@@ -337,11 +390,12 @@ public class ExporterV2 extends StarMacro {
         planeSection.setPresentationName("X Normal");
     }
 
-    /*
-        This method creates a plane, before the X, Y and Z methods make them specific to their axes.
-        Takes in the sim, a scene (any will do) and the units being used in the sim (usually metres).
-
-        Scope to improve efficiency of this method, see comments within.
+    /**
+     *
+     * @param sim
+     * @param scene
+     * @param units
+     * @return
      */
     public PlaneSection planeSetup (Simulation sim, Scene scene, Units units) {
         scene.setTransparencyOverrideMode(SceneTransparencyOverride.MAKE_SCENE_TRANSPARENT);
@@ -378,5 +432,14 @@ public class ExporterV2 extends StarMacro {
 
         //returns the generic plane section
         return planeSection;
+    }
+
+    public static void cleanUp(Simulation sim) {
+        for (Scene scene : sim.getSceneManager().getScenes()) {
+            sim.getSceneManager().deleteScenes(new NeoObjectVector(new Object[] {scene}));
+        }
+        for (Part section : sim.getPartManager().getObjects()) {
+            sim.getPartManager().removeObjects(section);
+        }
     }
 }
