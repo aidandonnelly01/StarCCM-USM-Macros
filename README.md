@@ -15,6 +15,9 @@ Download the file ExperterV2.java and run in StarCCM+'s macro suite. No compiler
 # Contributors 
 
 Oran Brokie, member of Aerodynamics @USM
+
 James Baptie, system head of Cooling @USM
+
 Andrew Smith, system head of Aerodynamics @USM
+
 Aidan Donnelly, member of Cooling/Aero @USM, Primary project software engineer
