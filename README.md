@@ -27,7 +27,7 @@ link: https://wikis.ovgu.de/lss/doku.php?id=guide:starccm
 
 # Contributors 
 
-Oran Brokie, member of Aerodynamics @USM
+Oran Brockie, member of Aerodynamics @USM
 
 James Baptie, system head of Cooling @USM
 
